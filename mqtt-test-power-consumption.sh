@@ -1,4 +1,10 @@
-#!/usr/bin/bash
+#!/bin/bash
+while getopts i:d: flag; do
+  case "${flag}" in
+  i) KASA_CURRENT_IP=${OPTARG} ;;
+  d) DEBUG_MODE=${OPTARG} ;; #unused
+  esac
+done
 
 KASA_SCRIPT_START_TIME=$(date +%s.%N)
 
@@ -19,20 +25,19 @@ if [ -v KASA_CURRENT_IP ]; then
     # publishing to mqtt broker
     # mosquitto_pub -h test.mosquitto.org -t washer -m "Time: $currentTime, Power: $power"
     if (($(echo "$power 9" | awk '{print ($1 > $2)}'))); then
-      mosquitto_pub -h test.mosquitto.org -t washer -m "On"
+      mosquitto_pub -h test.mosquitto.org -t washer -m "On" || (echo -e "\e[31mERROR: $KASA_CURRENT_IP failed at $(date +%s.%N) \e[0m" && exit 1)
       # echo "ON"
     else
-      mosquitto_pub -h test.mosquitto.org -t washer -m "Off"
+      mosquitto_pub -h test.mosquitto.org -t washer -m "Off" || (echo -e "\e[31mERROR: $KASA_CURRENT_IP failed at $(date +%s.%N) \e[0m" && exit 1)
       # echo "OFF"
     fi
 
     # sleep 0.1
   done
-
 else
   clear
   echo "You need to specify your plug's IP with the command:"
-  echo -e "\e[34mexport KASA_CURRENT_IP=[your plug's IP without brackets]\e[0m"
+  echo -e "\e[34m./filepath/flags.sh -i [your plug's IP without brackets]\e[0m"
   echo ""
   echo -e "Not sure what the IP is? Set up your plug with the smartphone app then run \e[32mkasa discover\e[0m in a terminal."
 fi

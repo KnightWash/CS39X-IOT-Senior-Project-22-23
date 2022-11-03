@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 while getopts i:d: flag; do
   case "${flag}" in
   i) KASA_CURRENT_IP=${OPTARG} ;;

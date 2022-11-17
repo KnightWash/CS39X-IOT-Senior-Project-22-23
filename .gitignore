@@ -19,4 +19,4 @@ web-build/
 # our testing stuff
 testKasaOutput.txt
 testKasaOutput.csv
-addresses.txt
+#addresses.txt #we actually need this, leave it commented out

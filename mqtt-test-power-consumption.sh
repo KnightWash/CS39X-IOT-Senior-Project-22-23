@@ -13,6 +13,9 @@ if [ -v KASA_CURRENT_IP ]; then
 
   echo "You won't see any output in the terminal, but check the testKasaOutput.txt file for results as it progresses. When you're ready to stop this script, press Ctrl+C at any time."
   echo "Time,Power" >>testKasaOutput.csv
+
+  plugName=$(kasa --type plug --host $KASA_CURRENT_IP sysinfo | grep alias | awk '{print $2}' | tr -d "'" | tr -d ",")
+
   while true; do
     # currentTime=$(date +%s.%N)
     currentTime=$(echo "$(date +%s.%N) $KASA_SCRIPT_START_TIME" | awk '{print $1 - $2}')
@@ -24,11 +27,13 @@ if [ -v KASA_CURRENT_IP ]; then
 
     # publishing to mqtt broker
     # mosquitto_pub -h test.mosquitto.org -t washer -m "Time: $currentTime, Power: $power"
+
+    echo "publishing to $plugName"
     if (($(echo "$power 9" | awk '{print ($1 > $2)}'))); then
-      mosquitto_pub -h test.mosquitto.org -t washer -m "On" || (echo -e "\e[31mERROR: $KASA_CURRENT_IP failed at $(date +%s.%N) \e[0m" && exit 1)
+      mosquitto_pub -h test.mosquitto.org -t $plugName -m "On" || (echo -e "\e[31mERROR: $KASA_CURRENT_IP failed at $(date +%s.%N) \e[0m" && exit 1)
       # echo "ON"
     else
-      mosquitto_pub -h test.mosquitto.org -t washer -m "Off" || (echo -e "\e[31mERROR: $KASA_CURRENT_IP failed at $(date +%s.%N) \e[0m" && exit 1)
+      mosquitto_pub -h test.mosquitto.org -t $plugName -m "Off" || (echo -e "\e[31mERROR: $KASA_CURRENT_IP failed at $(date +%s.%N) \e[0m" && exit 1)
       # echo "OFF"
     fi
 

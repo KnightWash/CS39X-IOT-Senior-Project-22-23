@@ -29,7 +29,7 @@ if [ -v KASA_CURRENT_IP ]; then
     # mosquitto_pub -h test.mosquitto.org -t washer -m "Time: $currentTime, Power: $power"
 
     echo "publishing to $plugName"
-    if (($(echo "$power 9" | awk '{print ($1 > $2)}'))); then
+    if (($(echo "$power 11" | awk '{print ($1 > $2)}'))); then
       mosquitto_pub -h test.mosquitto.org -t $plugName -m "On" || (echo -e "\e[31mERROR: $KASA_CURRENT_IP failed at $(date +%s.%N) \e[0m" && exit 1)
       # echo "ON"
     else

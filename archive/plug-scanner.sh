@@ -11,5 +11,5 @@ for Line in $Lines; do
 	# leave the & at the end!
 	# that lets the line run in the background w/o waiting for the previous one to finish
 	# we obviously don't want that...
-	./mqtt-test-power-consumption.sh -i $Line &
+	./archive/mqtt-test-power-consumption.sh -i $Line &
 done

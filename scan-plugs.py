@@ -35,7 +35,7 @@ async def main():
     #     currentPlug = SmartPlug(plug)
     #     await currentPlug.update()  # Request an update
 
-    #     client.publish(currentPlug.alias, "Off")
+    #     client.publish(currentPlug.alias, payload = "Off", retain=True)
 
     # for plug in plugList:
     #     plugHistory = LaundryMachine(plug)
@@ -81,7 +81,7 @@ async def main():
                 currentRun = True
                 if currentRun == oneRunBefore == twoRunsBefore:
                     print("print 'On' to mqtt here")
-                    client.publish(currentPlug.alias, "On")
+                    client.publish(currentPlug.alias, payload = "On", retain=True)
                 else:
                     # do nothing
                     continue
@@ -89,7 +89,7 @@ async def main():
                 currentRun = False
                 if currentRun == oneRunBefore == twoRunsBefore:
                     print("print 'Off' to mqtt here")
-                    client.publish(currentPlug.alias, "Off")
+                    client.publish(currentPlug.alias, payload = "Off", retain=True)
                 else:
                     # do nothing
                     continue

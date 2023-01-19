@@ -5,6 +5,8 @@ from kasa import SmartPlug
 from datetime import datetime
 import csv
 
+MQTTServerName = "test.mosquitto.org"
+
 #### reference code ####
 #### https://python-kasa.readthedocs.io/en/latest/smartdevice.html ####
 # plug_1 = SmartPlug("153.106.213.230")
@@ -15,15 +17,14 @@ import csv
 
 class LaundryMachine:
     def __init__(self):
-        self.currentRun = True
-        self.twoRunsBefore = True
-        self.oneRunBefore = True
-        self.previousMachineState = True
+        self.currentRun = 2
+        self.twoRunsBefore = 2
+        self.oneRunBefore = 2
+        self.previousMachineState = 2
         self.IP = str("127.0.0.1")
 
 
 async def main():
-
     plugAddresses = open("addresses.txt", "r")
     scanList = plugAddresses.readlines()
     plugAddresses.close()
@@ -33,10 +34,10 @@ async def main():
 
     plugList = [LaundryMachine() for p in IPList]
     for i in range(len(plugList)):
-        plugList[i].oneRunBefore = True
-        plugList[i].twoRunsBefore = True
-        plugList[i].previousMachineState = True
+        plugList[i].oneRunBefore = 2
+        plugList[i].twoRunsBefore = 2
         plugList[i].IP = IPList[i]
+        plugList[i].previousMachineState = 2
 
     print(plugList[0].oneRunBefore)
     print(plugList[0].twoRunsBefore)
@@ -66,23 +67,22 @@ async def main():
 
             # # publishing to mqtt broker
             client = mqtt.Client("Beta")
-            client.connect("test.mosquitto.org")
-            # print("Publishing to " + currentPlug.alias)
+            client.connect(MQTTServerName)
 
             # Only publish on state change
             if powerLevel > 11:
-                plug.currentRun = True
+                plug.currentRun = 0
                 if plug.currentRun != plug.previousMachineState:
                     if plug.currentRun == plug.oneRunBefore == plug.twoRunsBefore:
-                        plug.previousMachineState = True
+                        plug.previousMachineState = 0
                         print("print 'On' to mqtt here")
                         client.publish(currentPlug.alias,
                                        payload="On", retain=True)
             else:
-                plug.currentRun = False
+                plug.currentRun = 1
                 if plug.currentRun != plug.previousMachineState:
                     if plug.currentRun == plug.oneRunBefore == plug.twoRunsBefore:
-                        plug.previousMachineState = False
+                        plug.previousMachineState = 1
                         print("print 'Off' to mqtt here")
                         client.publish(currentPlug.alias,
                                        payload="Off", retain=True)

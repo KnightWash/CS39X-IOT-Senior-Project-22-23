@@ -3,7 +3,9 @@ import asyncio
 import paho.mqtt.client as mqtt
 from kasa import SmartPlug
 from datetime import datetime
-import csv
+import logging  # https://docs.python.org/3/howto/logging.html
+
+logging.basicConfig(filename='debug.log', encoding='utf-8', level=logging.WARNING)
 
 MQTTServerName = "test.mosquitto.org"
 
@@ -14,7 +16,6 @@ MQTTServerName = "test.mosquitto.org"
 # print(plug_1.alias) # Print out the alias
 # print(plug_1.emeter_realtime) # Print out current emeter status
 
-
 class LaundryMachine:
     def __init__(self):
         self.currentRun = 2
@@ -24,13 +25,13 @@ class LaundryMachine:
         self.IP = str("127.0.0.1")
 
 
-async def main():
+async def main():    
+
     plugAddresses = open("addresses.txt", "r")
     scanList = plugAddresses.readlines()
     plugAddresses.close()
     # strip newlines out of the list of plugs from the document...
     IPList = [p.strip() for p in scanList]
-    # startTime = time.time()
 
     plugList = [LaundryMachine() for p in IPList]
     for i in range(len(plugList)):
@@ -39,28 +40,21 @@ async def main():
         plugList[i].IP = IPList[i]
         plugList[i].previousMachineState = 2
 
-    print(plugList[0].oneRunBefore)
-    print(plugList[0].twoRunsBefore)
-    print(plugList[0].previousMachineState)
-    print(plugList[0].IP)
+    # print(plugList[0].oneRunBefore)
+    # print(plugList[0].twoRunsBefore)
+    # print(plugList[0].previousMachineState)
+    # print(plugList[0].IP)
     print(plugList)
 
     while(True):
-        # print("hello world")
-        # print(IPList)
-
         for plug in plugList:
-            # log_file = open("testKasaOutput.csv", "a+")
-
             currentPlug = SmartPlug(plug.IP)
-            # currentTime = (startTime - time.time())
-
-            # csv.writer(log_file).writerow(currentTime)
 
             try:
                 await currentPlug.update()  # Request an update
             except:
-                print("WARNING: SCAN FAILED FOR " + currentPlug.alias + "...")
+                print("WARNING: SCAN FAILED FOR " + plug.IP + "...")
+                logging.warning("SCAN FAILED FOR " + plug.IP + " at " + str(datetime.now()))
             else:
                 print(currentPlug.alias + "'s power level is...")
                 eMeterCheck = currentPlug.emeter_realtime
@@ -79,7 +73,7 @@ async def main():
                     if plug.currentRun != plug.previousMachineState:
                         if plug.currentRun == plug.oneRunBefore == plug.twoRunsBefore:
                             plug.previousMachineState = 0
-                            print("print 'On' to mqtt here")
+                            print("posting 'On' to mqtt...")
                             client.publish(currentPlug.alias,
                                            payload="On", retain=True)
                 else:
@@ -87,12 +81,9 @@ async def main():
                     if plug.currentRun != plug.previousMachineState:
                         if plug.currentRun == plug.oneRunBefore == plug.twoRunsBefore:
                             plug.previousMachineState = 1
-                            print("print 'Off' to mqtt here")
+                            print("posting 'Off' to mqtt...")
                             client.publish(currentPlug.alias,
                                            payload="Off", retain=True)
-
-                # don't put anything after this line in the for loop - we need it to save every plug's ping data
-                # log_file.close()
 
                 plug.twoRunsBefore = plug.oneRunBefore
                 plug.oneRunBefore = plug.currentRun

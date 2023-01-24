@@ -61,7 +61,7 @@ async def main():
                 logging.warning("SCAN FAILED FOR " + plug.IP +
                                 " at " + str(datetime.now()))
             else:
-                print(currentPlug.get_emeter_daily())
+                print(currentPlug.get_emeter_daily(year=2023, month=1))
 
                 print(currentPlug.alias + "'s power level is...")
                 eMeterCheck = currentPlug.emeter_realtime

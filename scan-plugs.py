@@ -54,6 +54,8 @@ async def main():
 
             try:
                 await currentPlug.update()  # Request an update
+                # despite the misleading function name, this returns daily statistics for the current month
+                await currentPlug.get_emeter_daily()
             except:
                 print("WARNING: SCAN FAILED FOR " + plug.IP + "...")
                 logging.warning("SCAN FAILED FOR " + plug.IP +

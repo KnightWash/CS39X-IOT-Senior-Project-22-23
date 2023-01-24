@@ -53,6 +53,7 @@ async def main():
             currentPlug = SmartPlug(plug.IP)
 
             try:
+                await currentPlug.turn_on()
                 await currentPlug.update()  # Request an update
                 # despite the misleading function name, this returns daily statistics for the current month
                 await currentPlug.get_emeter_daily()
@@ -62,8 +63,8 @@ async def main():
                                 " at " + str(datetime.now()))
             else:
                 # print(currentPlug.get_emeter_daily(year=2023, month=1))
-                print("Usage today: ", currentPlug.emeter_today, " kWh")
-                print("Usage this month: ", currentPlug.emeter_this_month, " kWh")
+                print("Usage today:", currentPlug.emeter_today, "kWh")
+                print("Usage this month:", currentPlug.emeter_this_month, "kWh")
 
                 print(currentPlug.alias + "'s power level is...")
                 eMeterCheck = currentPlug.emeter_realtime

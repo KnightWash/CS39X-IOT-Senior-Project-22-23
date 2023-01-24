@@ -74,16 +74,14 @@ async def main():
                         if plug.currentRun == plug.oneRunBefore == plug.twoRunsBefore:
                             plug.previousMachineState = 0
                             print("posting 'On' to mqtt...")
-                            client.publish(currentPlug.alias,
-                                           payload="On", retain=True)
+                            client.publish(currentPlug.alias, qos=1, payload="On", retain=True)
                 else:
                     plug.currentRun = 1
                     if plug.currentRun != plug.previousMachineState:
                         if plug.currentRun == plug.oneRunBefore == plug.twoRunsBefore:
                             plug.previousMachineState = 1
                             print("posting 'Off' to mqtt...")
-                            client.publish(currentPlug.alias,
-                                           payload="Off", retain=True)
+                            client.publish(currentPlug.alias, qos=1, payload="Off", retain=True)
 
                 plug.twoRunsBefore = plug.oneRunBefore
                 plug.oneRunBefore = plug.currentRun

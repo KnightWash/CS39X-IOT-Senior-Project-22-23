@@ -62,8 +62,8 @@ async def main():
                                 " at " + str(datetime.now()))
             else:
                 # print(currentPlug.get_emeter_daily(year=2023, month=1))
-                print("Usage today: " + str(currentPlug.emeter_today))
-                print("Usage this month: " + currentPlug.emeter_this_month)
+                print("Usage today: %f", currentPlug.emeter_today)
+                print("Usage this month: %f", currentPlug.emeter_this_month)
 
                 print(currentPlug.alias + "'s power level is...")
                 eMeterCheck = currentPlug.emeter_realtime

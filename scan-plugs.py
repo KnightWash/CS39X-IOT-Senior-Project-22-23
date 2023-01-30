@@ -5,7 +5,8 @@ from kasa import SmartPlug
 from datetime import datetime
 import logging  # https://docs.python.org/3/howto/logging.html
 
-logging.basicConfig(filename='debug.log', encoding='utf-8', level=logging.WARNING)
+logging.basicConfig(filename='debug.log', encoding='utf-8',
+                    level=logging.WARNING)
 
 MQTTServerName = "test.mosquitto.org"
 
@@ -16,6 +17,7 @@ MQTTServerName = "test.mosquitto.org"
 # print(plug_1.alias) # Print out the alias
 # print(plug_1.emeter_realtime) # Print out current emeter status
 
+
 class LaundryMachine:
     def __init__(self):
         self.currentRun = 2
@@ -25,7 +27,7 @@ class LaundryMachine:
         self.IP = str("127.0.0.1")
 
 
-async def main():    
+async def main():
 
     plugAddresses = open("addresses.txt", "r")
     scanList = plugAddresses.readlines()
@@ -51,11 +53,19 @@ async def main():
             currentPlug = SmartPlug(plug.IP)
 
             try:
+                await currentPlug.turn_on()
                 await currentPlug.update()  # Request an update
+                # despite the misleading function name, this returns daily statistics for the current month
+                await currentPlug.get_emeter_daily()
             except:
                 print("WARNING: SCAN FAILED FOR " + plug.IP + "...")
-                logging.warning("SCAN FAILED FOR " + plug.IP + " at " + str(datetime.now()))
+                logging.warning("SCAN FAILED FOR " + plug.IP +
+                                " at " + str(datetime.now()))
             else:
+                # print(currentPlug.get_emeter_daily(year=2023, month=1))
+                print("Usage today:", currentPlug.emeter_today, "kWh")
+                print("Usage this month:", currentPlug.emeter_this_month, "kWh")
+
                 print(currentPlug.alias + "'s power level is...")
                 eMeterCheck = currentPlug.emeter_realtime
                 # let's pull the actual number we want out of eMeterCheck
@@ -74,14 +84,16 @@ async def main():
                         if plug.currentRun == plug.oneRunBefore == plug.twoRunsBefore:
                             plug.previousMachineState = 0
                             print("posting 'On' to mqtt...")
-                            client.publish(currentPlug.alias, qos=1, payload="On", retain=True)
+                            client.publish(currentPlug.alias,
+                                           qos=1, payload="On", retain=True)
                 else:
                     plug.currentRun = 1
                     if plug.currentRun != plug.previousMachineState:
                         if plug.currentRun == plug.oneRunBefore == plug.twoRunsBefore:
                             plug.previousMachineState = 1
                             print("posting 'Off' to mqtt...")
-                            client.publish(currentPlug.alias, qos=1, payload="Off", retain=True)
+                            client.publish(currentPlug.alias,
+                                           qos=1, payload="Off", retain=True)
 
                 plug.twoRunsBefore = plug.oneRunBefore
                 plug.oneRunBefore = plug.currentRun

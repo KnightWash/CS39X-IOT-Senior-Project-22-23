@@ -6,7 +6,7 @@ from datetime import datetime
 import logging  # https://docs.python.org/3/howto/logging.html
 
 logging.basicConfig(filename='debug.log', encoding='utf-8',
-                    level=logging.WARNING)
+                    level=logging.WARNING, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
 MQTTServerName = "test.mosquitto.org"
 
@@ -59,8 +59,7 @@ async def main():
                 await currentPlug.get_emeter_daily()
             except:
                 print("WARNING: SCAN FAILED FOR " + plug.IP + "...")
-                logging.warning("SCAN FAILED FOR " + plug.IP +
-                                " at " + str(datetime.now()))
+                logging.warning("SCAN FAILED FOR " + plug.IP)
             else:
                 # print(currentPlug.get_emeter_daily(year=2023, month=1))
                 print("Usage today:", currentPlug.emeter_today, "kWh")

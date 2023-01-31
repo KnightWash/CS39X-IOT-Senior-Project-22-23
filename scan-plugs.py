@@ -72,27 +72,45 @@ async def main():
                     "=", 1)[1].split(" ", 1)[0])
                 print(powerLevel)
 
-                # # publishing to mqtt broker
+                # creating mqtt client object
                 client = mqtt.Client("Beta")
+                # client.loop_forever()
+
+                # connecting to the broker
                 client.connect(MQTTServerName)
 
-                # Only publish on state change
+
+                # only publish on state change
                 if powerLevel > 11:
                     plug.currentRun = 0
                     if plug.currentRun != plug.previousMachineState:
                         if plug.currentRun == plug.oneRunBefore == plug.twoRunsBefore:
                             plug.previousMachineState = 0
-                            print("posting 'On' to mqtt...")
-                            client.publish(currentPlug.alias,
-                                           qos=1, payload="On", retain=True)
+                            attempts = 0
+                            publishSuccess = False
+                            while publishSuccess is False:
+                                try:
+                                    print("posting 'On' to mqtt...")
+                                    client.publish(currentPlug.alias,
+                                                qos=1, payload="On", retain=True)
+                                    publishSuccess = True
+                                except:
+                                    print("trying to reconnect to mqtt broker")
                 else:
                     plug.currentRun = 1
                     if plug.currentRun != plug.previousMachineState:
                         if plug.currentRun == plug.oneRunBefore == plug.twoRunsBefore:
                             plug.previousMachineState = 1
-                            print("posting 'Off' to mqtt...")
-                            client.publish(currentPlug.alias,
-                                           qos=1, payload="Off", retain=True)
+                            attempts = 0
+                            publishSuccess = False
+                            while attempts < 3 and publishSuccess is False:
+                                try:
+                                    print("posting 'Off' to mqtt...")
+                                    client.publish(currentPlug.alias,
+                                                qos=1, payload="Off", retain=True)
+                                    publishSuccess = True
+                                except:
+                                    print("trying to reconnect to mqtt broker")
 
                 plug.twoRunsBefore = plug.oneRunBefore
                 plug.oneRunBefore = plug.currentRun

@@ -111,6 +111,7 @@ async def main():
                                     publishSuccess = True
                                 except:
                                     print("trying to reconnect to mqtt broker")
+                                    attempts += 1
 
                 plug.twoRunsBefore = plug.oneRunBefore
                 plug.oneRunBefore = plug.currentRun

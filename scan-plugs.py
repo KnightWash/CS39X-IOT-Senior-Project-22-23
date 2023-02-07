@@ -74,10 +74,17 @@ async def main():
 
                 # creating mqtt client object
                 client = mqtt.Client("Beta")
-                client.loop_forever(retry_first_connection=True)
+
+                try:
+                    client.connect(MQTTServerName)
+                except:
+                    print("Dropped connection - this is okay, we'll just wait until the next loop...")
+                    logging.warning("Dropped connection - this is okay, we'll just wait until the next loop...")
+                    break
+                # else:
+                # client.loop_forever()
 
                 # connecting to the broker
-                client.connect(MQTTServerName)
 
 
                 # only publish on state change

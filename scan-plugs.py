@@ -74,7 +74,7 @@ async def main():
 
                 # creating mqtt client object
                 client = mqtt.Client("Beta")
-                # client.loop_forever()
+                client.loop_forever(retry_first_connection=True)
 
                 # connecting to the broker
                 client.connect(MQTTServerName)

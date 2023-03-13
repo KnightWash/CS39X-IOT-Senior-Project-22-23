@@ -102,7 +102,7 @@ async def main():
                                     print("posting 'On' to mqtt...")
                                     plug.date = int(datetime.datetime.now().timestamp())
                                     client.publish(currentPlug.alias,
-                                                qos=1, payload=("On|" + plug.date), retain=True)
+                                                qos=1, payload=("On|" + str(plug.date)), retain=True)
                                     publishSuccess = True
                                 except:
                                     print("trying to reconnect to mqtt broker")
@@ -117,7 +117,7 @@ async def main():
                                 try:
                                     print("posting 'Off' to mqtt...")
                                     client.publish(currentPlug.alias,
-                                                qos=1, payload=("Off|" + plug.date), retain=True)
+                                                qos=1, payload=("Off|" + str(plug.date)), retain=True)
                                     publishSuccess = True
                                 except:
                                     print("trying to reconnect to mqtt broker")

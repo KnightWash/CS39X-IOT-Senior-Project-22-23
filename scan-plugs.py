@@ -97,7 +97,7 @@ async def main():
                             plug.previousMachineState = 0
                             attempts = 0
                             publishSuccess = False
-                            while publishSuccess is False:
+                            while attempts < 3 and publishSuccess is False:
                                 try:
                                     print("posting 'On' to mqtt...")
                                     plug.date = int(datetime.datetime.now().timestamp())
@@ -106,6 +106,10 @@ async def main():
                                     publishSuccess = True
                                 except:
                                     print("trying to reconnect to mqtt broker")
+                                    attempts += 1
+                                    if attempts >= 3:
+                                        print("Posting failed for " + SmartPlug.alias + " at " + plug.date)
+                                        logging.warning("Posting failed for " + SmartPlug.alias + " at " + plug.date)
                 else:
                     plug.currentRun = 1
                     if plug.currentRun != plug.previousMachineState:
@@ -116,12 +120,17 @@ async def main():
                             while attempts < 3 and publishSuccess is False:
                                 try:
                                     print("posting 'Off' to mqtt...")
+                                    plug.date = int(datetime.datetime.now().timestamp())
                                     client.publish(currentPlug.alias,
                                                 qos=1, payload=("Off|" + str(plug.date)), retain=True)
                                     publishSuccess = True
                                 except:
                                     print("trying to reconnect to mqtt broker")
                                     attempts += 1
+                                    if attempts >= 3:
+                                        print("Posting failed for " + SmartPlug.alias + " at " + plug.date)
+                                        logging.warning("Posting failed for " + SmartPlug.alias + " at " + plug.date)
+
 
                 plug.twoRunsBefore = plug.oneRunBefore
                 plug.oneRunBefore = plug.currentRun

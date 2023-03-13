@@ -100,7 +100,7 @@ async def main():
                             while attempts < 3 and publishSuccess is False:
                                 try:
                                     print("posting 'On' to mqtt...")
-                                    plug.date = int(datetime.datetime.now().timestamp())
+                                    plug.date = int(datetime.now().timestamp())
                                     client.publish(currentPlug.alias,
                                                 qos=1, payload=("On|" + str(plug.date)), retain=True)
                                     publishSuccess = True
@@ -120,7 +120,7 @@ async def main():
                             while attempts < 3 and publishSuccess is False:
                                 try:
                                     print("posting 'Off' to mqtt...")
-                                    plug.date = int(datetime.datetime.now().timestamp())
+                                    plug.date = int(datetime.now().timestamp())
                                     client.publish(currentPlug.alias,
                                                 qos=1, payload=("Off|" + str(plug.date)), retain=True)
                                     publishSuccess = True

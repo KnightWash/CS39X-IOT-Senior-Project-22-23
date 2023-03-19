@@ -21,3 +21,4 @@ testKasaOutput.txt
 testKasaOutput.csv
 #addresses.txt #we actually need this, leave it commented out
 *.log
+*.db

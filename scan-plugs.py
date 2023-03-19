@@ -26,6 +26,7 @@ class LaundryMachine:
         self.IP = str("127.0.0.1")
         self.date = 0
 
+timeBetweenPosts = (5 * 60); #5 minutes in seconds
 
 async def main():
 
@@ -91,7 +92,7 @@ async def main():
                 # only publish on state change
                 if powerLevel > 11:
                     plug.currentRun = 0
-                    if plug.currentRun != plug.previousMachineState or int(datetime.now().timestamp()) > plug.date:
+                    if plug.currentRun != plug.previousMachineState or (int(datetime.now().timestamp()) - plug.date == timeBetweenPosts):
                         if plug.currentRun == plug.oneRunBefore == plug.twoRunsBefore:
                             attempts = 0
                             publishSuccess = False
@@ -113,7 +114,7 @@ async def main():
                                     plug.date = int(datetime.now().timestamp())
                 else:
                     plug.currentRun = 1
-                    if plug.currentRun != plug.previousMachineState or int(datetime.now().timestamp()) > plug.date:
+                    if plug.currentRun != plug.previousMachineState or (int(datetime.now().timestamp()) - plug.date == timeBetweenPosts):
                         if plug.currentRun == plug.oneRunBefore == plug.twoRunsBefore:
                             attempts = 0
                             publishSuccess = False

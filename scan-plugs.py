@@ -17,7 +17,6 @@ MQTTServerName = "test.mosquitto.org"
 # print(plug_1.alias) # Print out the alias
 # print(plug_1.emeter_realtime) # Print out current emeter status
 
-
 class LaundryMachine:
     def __init__(self):
         self.currentRun = 2
@@ -92,15 +91,14 @@ async def main():
                 # only publish on state change
                 if powerLevel > 11:
                     plug.currentRun = 0
-                    if plug.currentRun != plug.previousMachineState:
+                    if plug.currentRun != plug.previousMachineState or int(datetime.now().timestamp()) > plug.date:
                         if plug.currentRun == plug.oneRunBefore == plug.twoRunsBefore:
-                            plug.previousMachineState = 0
                             attempts = 0
                             publishSuccess = False
                             while attempts < 3 and publishSuccess is False:
                                 try:
                                     print("posting 'On' to mqtt...")
-                                    plug.date = int(datetime.now().timestamp())
+
                                     client.publish(currentPlug.alias,
                                                 qos=1, payload=("On|" + str(plug.date)), retain=True)
                                     publishSuccess = True
@@ -110,17 +108,19 @@ async def main():
                                     if attempts >= 3:
                                         print("Posting failed for " + SmartPlug.alias + " at " + plug.date)
                                         logging.warning("Posting failed for " + SmartPlug.alias + " at " + plug.date)
+                                else:
+                                    plug.previousMachineState = 0
+                                    plug.date = int(datetime.now().timestamp())
                 else:
                     plug.currentRun = 1
-                    if plug.currentRun != plug.previousMachineState:
+                    if plug.currentRun != plug.previousMachineState or int(datetime.now().timestamp()) > plug.date:
                         if plug.currentRun == plug.oneRunBefore == plug.twoRunsBefore:
-                            plug.previousMachineState = 1
                             attempts = 0
                             publishSuccess = False
                             while attempts < 3 and publishSuccess is False:
                                 try:
                                     print("posting 'Off' to mqtt...")
-                                    plug.date = int(datetime.now().timestamp())
+
                                     client.publish(currentPlug.alias,
                                                 qos=1, payload=("Off|" + str(plug.date)), retain=True)
                                     publishSuccess = True
@@ -130,7 +130,9 @@ async def main():
                                     if attempts >= 3:
                                         print("Posting failed for " + SmartPlug.alias + " at " + plug.date)
                                         logging.warning("Posting failed for " + SmartPlug.alias + " at " + plug.date)
-
+                                else:
+                                    plug.previousMachineState = 1
+                                    plug.date = int(datetime.now().timestamp())
 
                 plug.twoRunsBefore = plug.oneRunBefore
                 plug.oneRunBefore = plug.currentRun

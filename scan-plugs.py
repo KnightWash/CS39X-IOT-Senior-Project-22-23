@@ -101,8 +101,11 @@ async def main():
                                     print("posting 'On' to mqtt...")
 
                                     client.publish(currentPlug.alias,
-                                                   qos=1, payload=("On|" + str(plug.date)), retain=True)
+                                                   qos=1, payload=("On|" + str(int(datetime.now().timestamp()))), retain=True)
                                     publishSuccess = True
+                                    plug.previousMachineState = 0
+                                    plug.date = int(datetime.now().timestamp())
+
                                 except:
                                     print("trying to reconnect to mqtt broker")
                                     attempts += 1
@@ -111,9 +114,6 @@ async def main():
                                               SmartPlug.alias + " at " + plug.date)
                                         logging.warning(
                                             "Posting failed for " + SmartPlug.alias + " at " + plug.date)
-                                else:
-                                    plug.previousMachineState = 0
-                                    plug.date = int(datetime.now().timestamp())
                 else:
                     plug.currentRun = 1
                     if plug.currentRun != plug.previousMachineState or (int(datetime.now().timestamp()) - plug.date == timeBetweenPosts):
@@ -125,8 +125,10 @@ async def main():
                                     print("posting 'Off' to mqtt...")
 
                                     client.publish(currentPlug.alias,
-                                                   qos=1, payload=("Off|" + str(plug.date)), retain=True)
+                                                   qos=1, payload=("Off|" + str(int(datetime.now().timestamp()))), retain=True)
                                     publishSuccess = True
+                                    plug.previousMachineState = 1
+                                    plug.date = int(datetime.now().timestamp())
                                 except:
                                     print("trying to reconnect to mqtt broker")
                                     attempts += 1
@@ -135,9 +137,6 @@ async def main():
                                               SmartPlug.alias + " at " + plug.date)
                                         logging.warning(
                                             "Posting failed for " + SmartPlug.alias + " at " + plug.date)
-                                else:
-                                    plug.previousMachineState = 1
-                                    plug.date = int(datetime.now().timestamp())
 
                 plug.twoRunsBefore = plug.oneRunBefore
                 plug.oneRunBefore = plug.currentRun

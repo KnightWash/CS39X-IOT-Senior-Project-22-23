@@ -92,7 +92,7 @@ async def main():
                 # only publish on state change
                 if powerLevel > 11:
                     plug.currentRun = 0
-                    if plug.currentRun != plug.previousMachineState or (int(datetime.now().timestamp()) - plug.date == timeBetweenPosts):
+                    if plug.currentRun != plug.previousMachineState or (int(datetime.now().timestamp()) - plug.date>= timeBetweenPosts):
                         if plug.currentRun == plug.oneRunBefore == plug.twoRunsBefore:
                             attempts = 0
                             publishSuccess = False
@@ -116,7 +116,7 @@ async def main():
                                             "Posting failed for " + SmartPlug.alias + " at " + plug.date)
                 else:
                     plug.currentRun = 1
-                    if plug.currentRun != plug.previousMachineState or (int(datetime.now().timestamp()) - plug.date == timeBetweenPosts):
+                    if plug.currentRun != plug.previousMachineState or (int(datetime.now().timestamp()) - plug.date >= timeBetweenPosts):
                         if plug.currentRun == plug.oneRunBefore == plug.twoRunsBefore:
                             attempts = 0
                             publishSuccess = False

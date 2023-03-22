@@ -8,6 +8,8 @@ import logging  # https://docs.python.org/3/howto/logging.html
 logging.basicConfig(filename='debug.log', encoding='utf-8',
                     level=logging.WARNING, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 MQTTServerName = "test.mosquitto.org"
+timeBetweenPosts = (5 * 60)  # 5 minutes in seconds
+powerOnThreshold = 11
 
 #### reference code ####
 #### https://python-kasa.readthedocs.io/en/latest/smartdevice.html ####
@@ -26,12 +28,18 @@ class LaundryMachine:
         self.IP = str("127.0.0.1")
         self.date = 0
 
+    def isTimeToRepost(self) -> bool:
+        if (int(datetime.now().timestamp()) - self.date>= timeBetweenPosts):
+            return True
+        return False
+    
+    def isStateChanged(self) -> bool:
+        if self.currentRun != self.previousMachineState:
+            return True
+        return False
 
+    
 async def main():
-
-    powerOnThreshold = 11
-    timeBetweenPosts = (5 * 60)  # 5 minutes in seconds
-
     plugAddresses = open("addresses.txt", "r")
     scanList = plugAddresses.readlines()
     plugAddresses.close()
@@ -71,6 +79,7 @@ async def main():
             print("Usage today:", currentPlug.emeter_today, "kWh")
             print("Usage this month:", currentPlug.emeter_this_month, "kWh")
             print(currentPlug.alias + "'s power level is...")
+
             eMeterCheck = currentPlug.emeter_realtime
             # let's pull the actual number we want out of eMeterCheck
             powerLevel = float(str(eMeterCheck).split("=", 1)[1].split(" ", 1)[0])
@@ -93,7 +102,7 @@ async def main():
             # only publish on state change
             if powerLevel > powerOnThreshold:
                 plug.currentRun = 0
-                if plug.currentRun != plug.previousMachineState or (int(datetime.now().timestamp()) - plug.date>= timeBetweenPosts):
+                if plug.isStateChanged() or plug.isTimeToRepost():
                     if plug.currentRun == plug.oneRunBefore == plug.twoRunsBefore:
                         attempts = 0
                         publishSuccess = False
@@ -117,7 +126,7 @@ async def main():
                                         "Posting failed for " + SmartPlug.alias + " at " + plug.date)
             else:
                 plug.currentRun = 1
-                if plug.currentRun != plug.previousMachineState or (int(datetime.now().timestamp()) - plug.date >= timeBetweenPosts):
+                if plug.isStateChanged() or plug.isTimeToRepost():
                     if plug.currentRun == plug.oneRunBefore == plug.twoRunsBefore:
                         attempts = 0
                         publishSuccess = False

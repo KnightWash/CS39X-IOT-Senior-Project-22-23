@@ -5,10 +5,15 @@ from kasa import SmartPlug
 from datetime import datetime
 import logging  # https://docs.python.org/3/howto/logging.html
 
-logging.basicConfig(filename='debug.log', encoding='utf-8',
-                    level=logging.WARNING, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+logging.basicConfig(
+    filename="debug.log",
+    encoding="utf-8",
+    level=logging.WARNING,
+    format="%(asctime)s %(message)s",
+    datefmt="%m/%d/%Y %I:%M:%S %p",
+)
 MQTTServerName = "test.mosquitto.org"
-timeBetweenPosts = (5 * 60)  # 5 minutes in seconds
+timeBetweenPosts = 5 * 60  # 5 minutes in seconds
 powerOnThreshold = 11
 
 #### reference code ####
@@ -29,16 +34,16 @@ class LaundryMachine:
         self.date = 0
 
     def isTimeToRepost(self) -> bool:
-        if (int(datetime.now().timestamp()) - self.date>= timeBetweenPosts):
+        if int(datetime.now().timestamp()) - self.date >= timeBetweenPosts:
             return True
         return False
-    
+
     def isStateChanged(self) -> bool:
         if self.currentRun != self.previousMachineState:
             return True
         return False
 
-    
+
 async def main():
     plugAddresses = open("addresses.txt", "r")
     scanList = plugAddresses.readlines()
@@ -60,7 +65,7 @@ async def main():
     # print(plugList[0].IP)
     print(plugList)
 
-    while(True):
+    while True:
         for plug in plugList:
             currentPlug = SmartPlug(plug.IP)
 
@@ -74,7 +79,7 @@ async def main():
                 logging.warning("SCAN FAILED FOR " + plug.IP)
                 print("=============================================")
                 continue
-            
+
             # print(currentPlug.get_emeter_daily(year=2023, month=1))
             print("Usage today:", currentPlug.emeter_today, "kWh")
             print("Usage this month:", currentPlug.emeter_this_month, "kWh")
@@ -92,9 +97,11 @@ async def main():
                 client.connect(MQTTServerName)
             except:
                 print(
-                    "Dropped connection - this is okay, we'll just wait until the next loop...")
+                    "Dropped connection - this is okay, we'll just wait until the next loop..."
+                )
                 logging.warning(
-                    "Dropped connection - this is okay, we'll just wait until the next loop...")
+                    "Dropped connection - this is okay, we'll just wait until the next loop..."
+                )
                 continue
 
             # connecting to the broker
@@ -110,8 +117,14 @@ async def main():
                             try:
                                 print("posting 'On' to mqtt...")
 
-                                client.publish(currentPlug.alias,
-                                                qos=1, payload=("On|" + str(int(datetime.now().timestamp()))), retain=True)
+                                client.publish(
+                                    currentPlug.alias,
+                                    qos=1,
+                                    payload=(
+                                        "On|" + str(int(datetime.now().timestamp()))
+                                    ),
+                                    retain=True,
+                                )
                                 publishSuccess = True
                                 plug.previousMachineState = 0
                                 plug.date = int(datetime.now().timestamp())
@@ -120,10 +133,12 @@ async def main():
                                 print("trying to reconnect to mqtt broker")
                                 attempts += 1
                                 if attempts >= 3:
-                                    print("Posting failed for " +
-                                            SmartPlug.alias + " at " + plug.date)
+                                    print(
+                                        f"Posting failed for {currentPlug.alias} at {plug.date}"
+                                    )
                                     logging.warning(
-                                        "Posting failed for " + SmartPlug.alias + " at " + plug.date)
+                                        f"Posting failed for {currentPlug.alias} at {plug.date}"
+                                    )
             else:
                 plug.currentRun = 1
                 if plug.isStateChanged() or plug.isTimeToRepost():
@@ -134,8 +149,14 @@ async def main():
                             try:
                                 print("posting 'Off' to mqtt...")
 
-                                client.publish(currentPlug.alias,
-                                                qos=1, payload=("Off|" + str(int(datetime.now().timestamp()))), retain=True)
+                                client.publish(
+                                    currentPlug.alias,
+                                    qos=1,
+                                    payload=(
+                                        "Off|" + str(int(datetime.now().timestamp()))
+                                    ),
+                                    retain=True,
+                                )
                                 publishSuccess = True
                                 plug.previousMachineState = 1
                                 plug.date = int(datetime.now().timestamp())
@@ -143,14 +164,17 @@ async def main():
                                 print("trying to reconnect to mqtt broker")
                                 attempts += 1
                                 if attempts >= 3:
-                                    print("Posting failed for " +
-                                            SmartPlug.alias + " at " + plug.date)
+                                    print(
+                                        f"Posting failed for {currentPlug.alias} at {plug.date}"
+                                    )
                                     logging.warning(
-                                        "Posting failed for " + SmartPlug.alias + " at " + plug.date)
+                                        f"Posting failed for {currentPlug.alias} at {plug.date}"
+                                    )
 
             plug.twoRunsBefore = plug.oneRunBefore
             plug.oneRunBefore = plug.currentRun
             print("=============================================")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

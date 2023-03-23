@@ -48,7 +48,7 @@ class LaundryMachine:
             return True
         return False
 
-    def handlePublishing(self, mqttClient, publishTopic):
+    def handlePublishing(self, mqttClient, publishTopic) -> None:
         if self.isStateChanged() is False and self.isTimeToRepost() is False:
             return
         if self.isPowerLevelStable() is False:
@@ -71,6 +71,7 @@ class LaundryMachine:
                     retain=True,
                 )
                 self.previousMachineState = self.currentRun
+                self.date = int(datetime.now().timestamp())
                 break
             except:
                 print("Trying to reconnect to MQTT broker")

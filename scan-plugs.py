@@ -1,4 +1,4 @@
-import time
+import sys
 import asyncio
 import paho.mqtt.client as mqtt
 from kasa import SmartPlug
@@ -80,6 +80,8 @@ class LaundryMachine:
                 self.previousMachineState = self.currentRun
                 self.date = int(datetime.now().timestamp())
                 break
+            except KeyboardInterrupt:
+                sys.exit()
             except Exception:
                 print("Trying to reconnect to MQTT broker")
                 attempts += 1
@@ -119,6 +121,8 @@ async def main():
                 await currentPlug.update()  # Request an update
                 # despite the misleading function name, this returns daily statistics for the current month
                 await currentPlug.get_emeter_daily()
+            except KeyboardInterrupt:
+                sys.exit()
             except Exception:
                 print("WARNING: SCAN FAILED FOR " + plug.IP + "...")
                 logging.warning("SCAN FAILED FOR " + plug.IP + "...")
@@ -138,6 +142,8 @@ async def main():
             client = mqtt.Client("knightwash")
             try:
                 client.connect(MQTTServerName)
+            except KeyboardInterrupt:
+                sys.exit()
             except Exception:
                 print(
                     "Dropped connection to MQTT broker - this is okay, we'll just wait until the next loop..."

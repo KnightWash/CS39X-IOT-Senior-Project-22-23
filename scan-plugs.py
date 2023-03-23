@@ -3,6 +3,7 @@ import asyncio
 import paho.mqtt.client as mqtt
 from kasa import SmartPlug
 from datetime import datetime
+from enum import Enum
 import logging  # https://docs.python.org/3/howto/logging.html
 
 logging.basicConfig(
@@ -24,12 +25,18 @@ powerOnThreshold = 11  # power in watts
 # print(plug_1.emeter_realtime) # Print out current emeter status
 
 
+class Status(Enum):
+    notRunning = 0
+    running = 1
+    unknown = 2
+
+
 class LaundryMachine:
     def __init__(self):
-        self.currentRun = 2
-        self.twoRunsBefore = 2
-        self.oneRunBefore = 2
-        self.previousMachineState = 2
+        self.currentRun = Status.unknown
+        self.twoRunsBefore = Status.unknown
+        self.oneRunBefore = Status.unknown
+        self.previousMachineState = Status.unknown
         self.IP = str("127.0.0.1")
         self.date = 0
 
@@ -53,7 +60,7 @@ class LaundryMachine:
             return
         if self.isPowerLevelStable() is False:
             return
-        if self.currentRun == 0:
+        if self.currentRun == Status.running:
             displayedMessage = "Posting 'On' to MQTT..."
             payloadMessage = "On|"
         else:
@@ -91,10 +98,10 @@ async def main():
 
     plugList = [LaundryMachine() for p in IPList]
     for i in range(len(plugList)):
-        plugList[i].oneRunBefore = 2
-        plugList[i].twoRunsBefore = 2
+        plugList[i].oneRunBefore = Status.unknown
+        plugList[i].twoRunsBefore = Status.unknown
         plugList[i].IP = IPList[i]
-        plugList[i].previousMachineState = 2
+        plugList[i].previousMachineState = Status.unknown
         plugList[i].date = 0
 
     # print(plugList[0].oneRunBefore)
@@ -141,9 +148,9 @@ async def main():
                 continue
 
             if powerLevel > powerOnThreshold:
-                plug.currentRun = 0
+                plug.currentRun = Status.running
             else:
-                plug.currentRun = 1
+                plug.currentRun = Status.notRunning
 
             plug.handlePublishing(mqttClient=client, publishTopic=currentPlug.alias)
             plug.twoRunsBefore = plug.oneRunBefore

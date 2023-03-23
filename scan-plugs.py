@@ -43,6 +43,11 @@ class LaundryMachine:
             return True
         return False
 
+    def isPowerLevelStable(self) -> bool:
+        if self.currentRun == self.oneRunBefore == self.twoRunsBefore:
+            return True
+        return False
+
     def handlePublishingOff(self, mqttClient, currentPlug):
         if self.isStateChanged() or self.isTimeToRepost():
             if self.currentRun == self.oneRunBefore == self.twoRunsBefore:
@@ -71,6 +76,42 @@ class LaundryMachine:
                             logging.warning(
                                 f"Posting failed for {currentPlug.alias} at {self.date}"
                             )
+
+        def handlePublishing(self, mqttClient, currentPlug):
+            if self.isStateChanged() is False and self.isTimeToRepost() is False:
+                return
+            if self.isPowerLevelStable() is False:
+                return
+            attempts = 0
+
+            if self.currentRun == 0:
+                displayedMessage = "posting 'On' to mqtt..."
+                payloadMessage = "On|"
+            elif self.currentRun == 1:
+                displayedMessage = "posting 'Off' to mqtt..."
+                payloadMessage = "Off|"
+
+            while attempts < 3:
+                try:
+                    print(displayedMessage)
+                    mqttClient.publish(
+                        currentPlug.alias,
+                        qos=1,
+                        payload=(payloadMessage + str(int(datetime.now().timestamp()))),
+                        retain=True,
+                    )
+                    publishSuccess = True
+
+                    self.previousMachineState = self.currentRun
+                    return
+                except:
+                    print("trying to reconnect to mqtt broker")
+                    attempts += 1
+                    if attempts >= 3:
+                        print(f"Posting failed for {currentPlug.alias} at {self.date}")
+                        logging.warning(
+                            f"Posting failed for {currentPlug.alias} at {self.date}"
+                        )
 
 
 async def main():
@@ -171,6 +212,7 @@ async def main():
             else:
                 plug.currentRun = 1
                 plug.handlePublishingOff(mqttClient=client, currentPlug=currentPlug)
+
                 # if plug.isStateChanged() or plug.isTimeToRepost():
                 #     if plug.currentRun == plug.oneRunBefore == plug.twoRunsBefore:
                 #         attempts = 0

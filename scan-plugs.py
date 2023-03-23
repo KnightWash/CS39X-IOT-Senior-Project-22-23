@@ -61,16 +61,16 @@ class LaundryMachine:
         if self.isPowerLevelStable() is False:
             return
         if self.currentRun == Status.running:
-            displayedMessage = "Posting 'On' to MQTT..."
+            postingMessage = "Posting 'On' to MQTT..."
             payloadMessage = "On|"
         else:
-            displayedMessage = "posting 'Off' to MQTT..."
+            postingMessage = "posting 'Off' to MQTT..."
             payloadMessage = "Off|"
 
         attempts = 0
         while attempts < 3:
             try:
-                print(displayedMessage)
+                print(postingMessage)
                 mqttClient.publish(
                     publishTopic,
                     qos=1,
@@ -80,7 +80,7 @@ class LaundryMachine:
                 self.previousMachineState = self.currentRun
                 self.date = int(datetime.now().timestamp())
                 break
-            except:
+            except Exception:
                 print("Trying to reconnect to MQTT broker")
                 attempts += 1
             if attempts >= 3:
@@ -119,7 +119,7 @@ async def main():
                 await currentPlug.update()  # Request an update
                 # despite the misleading function name, this returns daily statistics for the current month
                 await currentPlug.get_emeter_daily()
-            except:
+            except Exception:
                 print("WARNING: SCAN FAILED FOR " + plug.IP + "...")
                 logging.warning("SCAN FAILED FOR " + plug.IP + "...")
                 print("=============================================")
@@ -138,7 +138,7 @@ async def main():
             client = mqtt.Client("knightwash")
             try:
                 client.connect(MQTTServerName)
-            except:
+            except Exception:
                 print(
                     "Dropped connection to MQTT broker - this is okay, we'll just wait until the next loop..."
                 )

@@ -43,6 +43,35 @@ class LaundryMachine:
             return True
         return False
 
+    def handlePublishingOff(self, mqttClient, currentPlug):
+        if self.isStateChanged() or self.isTimeToRepost():
+            if self.currentRun == self.oneRunBefore == self.twoRunsBefore:
+                attempts = 0
+                publishSuccess = False
+                while attempts < 3 and publishSuccess is False:
+                    try:
+                        print("posting 'Off' to mqtt...")
+
+                        mqttClient.publish(
+                            currentPlug.alias,
+                            qos=1,
+                            payload=("Off|" + str(int(datetime.now().timestamp()))),
+                            retain=True,
+                        )
+                        publishSuccess = True
+                        self.previousMachineState = 1
+                        self.date = int(datetime.now().timestamp())
+                    except:
+                        print("trying to reconnect to mqtt broker")
+                        attempts += 1
+                        if attempts >= 3:
+                            print(
+                                f"Posting failed for {currentPlug.alias} at {self.date}"
+                            )
+                            logging.warning(
+                                f"Posting failed for {currentPlug.alias} at {self.date}"
+                            )
+
 
 async def main():
     plugAddresses = open("addresses.txt", "r")
@@ -141,35 +170,36 @@ async def main():
                                     )
             else:
                 plug.currentRun = 1
-                if plug.isStateChanged() or plug.isTimeToRepost():
-                    if plug.currentRun == plug.oneRunBefore == plug.twoRunsBefore:
-                        attempts = 0
-                        publishSuccess = False
-                        while attempts < 3 and publishSuccess is False:
-                            try:
-                                print("posting 'Off' to mqtt...")
+                plug.handlePublishingOff(mqttClient=client, currentPlug=currentPlug)
+                # if plug.isStateChanged() or plug.isTimeToRepost():
+                #     if plug.currentRun == plug.oneRunBefore == plug.twoRunsBefore:
+                #         attempts = 0
+                #         publishSuccess = False
+                #         while attempts < 3 and publishSuccess is False:
+                #             try:
+                #                 print("posting 'Off' to mqtt...")
 
-                                client.publish(
-                                    currentPlug.alias,
-                                    qos=1,
-                                    payload=(
-                                        "Off|" + str(int(datetime.now().timestamp()))
-                                    ),
-                                    retain=True,
-                                )
-                                publishSuccess = True
-                                plug.previousMachineState = 1
-                                plug.date = int(datetime.now().timestamp())
-                            except:
-                                print("trying to reconnect to mqtt broker")
-                                attempts += 1
-                                if attempts >= 3:
-                                    print(
-                                        f"Posting failed for {currentPlug.alias} at {plug.date}"
-                                    )
-                                    logging.warning(
-                                        f"Posting failed for {currentPlug.alias} at {plug.date}"
-                                    )
+                #                 client.publish(
+                #                     currentPlug.alias,
+                #                     qos=1,
+                #                     payload=(
+                #                         "Off|" + str(int(datetime.now().timestamp()))
+                #                     ),
+                #                     retain=True,
+                #                 )
+                #                 publishSuccess = True
+                #                 plug.previousMachineState = 1
+                #                 plug.date = int(datetime.now().timestamp())
+                #             except:
+                #                 print("trying to reconnect to mqtt broker")
+                #                 attempts += 1
+                #                 if attempts >= 3:
+                #                     print(
+                #                         f"Posting failed for {currentPlug.alias} at {plug.date}"
+                #                     )
+                #                     logging.warning(
+                #                         f"Posting failed for {currentPlug.alias} at {plug.date}"
+                #                     )
 
             plug.twoRunsBefore = plug.oneRunBefore
             plug.oneRunBefore = plug.currentRun

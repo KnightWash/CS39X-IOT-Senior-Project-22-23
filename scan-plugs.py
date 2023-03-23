@@ -100,8 +100,6 @@ class LaundryMachine:
                         payload=(payloadMessage + str(int(datetime.now().timestamp()))),
                         retain=True,
                     )
-                    publishSuccess = True
-
                     self.previousMachineState = self.currentRun
                     return
                 except:
@@ -112,6 +110,7 @@ class LaundryMachine:
                         logging.warning(
                             f"Posting failed for {currentPlug.alias} at {self.date}"
                         )
+                return
 
 
 async def main():

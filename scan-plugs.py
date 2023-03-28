@@ -1,11 +1,19 @@
-import sys
+import sqlite3
 import asyncio
+import time
+import logging  # https://docs.python.org/3/howto/logging.html
 import paho.mqtt.client as mqtt
 from kasa import SmartPlug
-from datetime import datetime
 from enum import Enum
-import logging  # https://docs.python.org/3/howto/logging.html
 
+#### python-kasa reference code ####
+#### https://python-kasa.readthedocs.io/en/latest/smartdevice.html ####
+# plug_1 = SmartPlug("153.106.213.230")
+# await plug_1.update() # Request the update
+# print(plug_1.alias) # Print out the alias
+# print(plug_1.emeter_realtime) # Print out current emeter status
+
+# Logging configuration
 logging.basicConfig(
     filename="debug.log",
     encoding="utf-8",
@@ -13,18 +21,20 @@ logging.basicConfig(
     format="%(asctime)s %(message)s",
     datefmt="%m/%d/%Y %I:%M:%S %p",
 )
+
+# Variables
 MQTTServerName = "test.mosquitto.org"
 timeBetweenPosts = 5 * 60  # 5 minutes in seconds
 powerOnThreshold = 11  # power in watts
 
-#### reference code ####
-#### https://python-kasa.readthedocs.io/en/latest/smartdevice.html ####
-# plug_1 = SmartPlug("153.106.213.230")
-# await plug_1.update() # Request the update
-# print(plug_1.alias) # Print out the alias
-# print(plug_1.emeter_realtime) # Print out current emeter status
+# Database connection
+con = sqlite3.connect("knightwash.db")
+cur = con.cursor()
+cur.execute(
+    "CREATE TABLE IF NOT EXISTS LaundryMachines(name, location, startTime, stopTime)"
+)
 
-
+# Enum for machine status
 class Status(Enum):
     notRunning = 0
     running = 1
@@ -40,8 +50,14 @@ class LaundryMachine:
         self.IP = str("127.0.0.1")
         self.date = 0
 
+        self.machineName = ""
+        self.location = ""
+        self.startTime = None
+        self.stopTime = None
+        self.runTime = None
+
     def isTimeToRepost(self) -> bool:
-        if int(datetime.now().timestamp()) - self.date >= timeBetweenPosts:
+        if int(time.time()) - self.date >= timeBetweenPosts:
             return True
         return False
 
@@ -55,15 +71,45 @@ class LaundryMachine:
             return True
         return False
 
+    def writeToDatabase(self) -> None:
+        print("Writing to database")
+        logging.info("Writing to database")
+
+        retry = 0
+        retries = 3
+        while retry < retries:
+            try:
+                cur.execute(
+                    f"""
+                    INSERT INTO LaundryMachines VALUES
+                    ('{self.machineName}', '{self.location}', {self.startTime}, {self.stopTime}, {self.runTime})
+                    """
+                )
+            except:
+                logging.warning("Failed writing to database, retrying...")
+            else:
+                break
+
     def handlePublishing(self, mqttClient, publishTopic) -> None:
         if self.isStateChanged() is False and self.isTimeToRepost() is False:
             return
         if self.isPowerLevelStable() is False:
             return
         if self.currentRun == Status.running:
+            if self.isStateChanged():
+                self.startTime = int(time.time())
+                print("Machine started")
+                logging.info("Machine started")
             displayedMessage = "Posting 'On' to MQTT..."
             payloadMessage = "On|"
         else:
+            if self.isStateChanged():
+                self.stopTime = int(time.time())
+                print("Machine stopped")
+                self.runTime = (
+                    self.stopTime - self.startTime
+                ) / 60  # runtime in minutes
+                logging.info("Machine stopped")
             displayedMessage = "posting 'Off' to MQTT..."
             payloadMessage = "Off|"
 
@@ -74,11 +120,11 @@ class LaundryMachine:
                 mqttClient.publish(
                     publishTopic,
                     qos=1,
-                    payload=(payloadMessage + str(int(datetime.now().timestamp()))),
+                    payload=(payloadMessage + str(int(time.time()))),
                     retain=True,
                 )
                 self.previousMachineState = self.currentRun
-                self.date = int(datetime.now().timestamp())
+                self.date = int(time.time())
                 break
             except:
                 print("Trying to reconnect to MQTT broker")
@@ -119,6 +165,8 @@ async def main():
                 await currentPlug.update()  # Request an update
                 # despite the misleading function name, this returns daily statistics for the current month
                 await currentPlug.get_emeter_daily()
+                plug.machineName = currentPlug.alias
+                plug.location = plug.machineName.split("/")[1]
             except:
                 print("WARNING: SCAN FAILED FOR " + plug.IP + "...")
                 logging.warning("SCAN FAILED FOR " + plug.IP + "...")

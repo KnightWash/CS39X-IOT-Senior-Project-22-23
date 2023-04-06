@@ -5,6 +5,7 @@ from kasa import SmartPlug
 from datetime import datetime
 from enum import Enum
 import logging  # https://docs.python.org/3/howto/logging.html
+from google.cloud import pubsub_v1
 
 logging.basicConfig(
     filename="debug.log",
@@ -16,6 +17,10 @@ logging.basicConfig(
 MQTTServerName = "test.mosquitto.org"
 timeBetweenPosts = 5 * 60  # 5 minutes in seconds
 powerOnThreshold = 11  # power in watts
+
+publisher = pubsub_v1.PublisherClient()
+# The `topic_path` method creates a fully qualified identifier
+# in the form `projects/{project_id}/topics/{topic_id}`
 
 #### reference code ####
 #### https://python-kasa.readthedocs.io/en/latest/smartdevice.html ####
@@ -67,6 +72,15 @@ class LaundryMachine:
             displayedMessage = "posting 'Off' to MQTT..."
             payloadMessage = "Off|"
 
+        ### send pubsub notifications out to people subscribed to machines ###
+        # convert / in topic name to - since pubsub can't handle slashes
+        pubSubTopic = publishTopic.replace("/","-")
+        # topic_path = publisher.topic_path("knightwash-webui-angular", pubSubTopic)
+        # topic_path = publisher.topic_path("knightwash-webui-angular", "calvin-test-dryer-location")
+
+        print("posted to pubsub!")
+
+        ### update listing on the website ###
         attempts = 0
         while attempts < 3:
             try:

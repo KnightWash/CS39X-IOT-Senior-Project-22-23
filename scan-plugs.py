@@ -5,6 +5,7 @@ from kasa import SmartPlug
 from datetime import datetime
 from enum import Enum
 import logging  # https://docs.python.org/3/howto/logging.html
+from google.cloud import pubsub_v1
 
 logging.basicConfig(
     filename="debug.log",
@@ -16,6 +17,11 @@ logging.basicConfig(
 MQTTServerName = "test.mosquitto.org"
 timeBetweenPosts = 5 * 60  # 5 minutes in seconds
 powerOnThreshold = 11  # power in watts
+
+#pubsub stuff
+publisher = pubsub_v1.PublisherClient()
+# The `topic_path` method creates a fully qualified identifier
+# in the form `projects/{project_id}/topics/{topic_id}`
 
 #### reference code ####
 #### https://python-kasa.readthedocs.io/en/latest/smartdevice.html ####
@@ -67,6 +73,21 @@ class LaundryMachine:
             displayedMessage = "posting 'Off' to MQTT..."
             payloadMessage = "Off|"
 
+        ### send pubsub notifications out to people subscribed to machines ###
+        # if self.isStateChanged() is True:
+        if True:
+            # convert / in topic name to - since pubsub can't handle slashes
+            pubSubTopic = publishTopic.replace("/","-")
+            # topic_path = publisher.topic_path("knightwash-webui-angular", pubSubTopic)
+            topic_path = publisher.topic_path("knightwash-webui-angular", "calvin-test-dryer-location")
+
+            data = payloadMessage.replace('|','').encode("utf-8")
+            # When you publish a message, the client returns a future.
+            future = publisher.publish(topic_path, data)
+            print(future.result())
+            print("posted to pubsub!")
+
+        ### update listing on the website ###
         attempts = 0
         while attempts < 3:
             try:
@@ -86,7 +107,8 @@ class LaundryMachine:
             if attempts >= 3:
                 print(f"Posting failed for {publishTopic} at {self.date}")
                 logging.warning(f"Posting failed for {publishTopic} at {self.date}")
-        return
+            # return
+
 
 
 async def main():

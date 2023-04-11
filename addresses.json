@@ -1,0 +1,22 @@
+[
+    {
+        "name": "calvin/bolt/washer/left",
+        "ipAddress": "",
+        "macAddress": "6C-5A-B0-5C-E7-8E"
+    },
+    {
+        "name": "calvin/bolt/washer/midleft",
+        "ipAddress": "",
+        "macAddress": "6C-5A-B0-5C-F9-47"
+    },
+    {
+        "name": "calvin/bolt/washer/midright",
+        "ipAddress": "",
+        "macAddress": "B0-A7-B9-FA-7D-DD"
+    },
+    {
+        "name": "calvin/bolt/washer/right",
+        "ipAddress": "",
+        "macAddress": "B0-A7-B9-FA-6A-FF"
+    }
+]

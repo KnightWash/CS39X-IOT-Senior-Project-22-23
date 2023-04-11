@@ -81,7 +81,7 @@ class LaundryMachine:
             # topic_path = publisher.topic_path("knightwash-webui-angular", pubSubTopic)
             topic_path = publisher.topic_path("knightwash-webui-angular", "calvin-test-dryer-location")
 
-            data = payloadMessage.replace('|','').encode("utf-8")
+            data = payloadMessage.replace('|','')
             # When you publish a message, the client returns a future.
             future = publisher.publish(topic_path, data)
             print(future.result())

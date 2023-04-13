@@ -62,10 +62,6 @@ class LaundryMachine:
         return False
 
     def handlePublishing(self, mqttClient, publishTopic) -> None:
-        if self.isStateChanged() is False and self.isTimeToRepost() is False:
-            return
-        if self.isPowerLevelStable() is False:
-            return
         if self.currentRun == Status.running:
             displayedMessage = "Posting 'On' to MQTT..."
             payloadMessage = "On|"
@@ -74,8 +70,9 @@ class LaundryMachine:
             payloadMessage = "Off|"
 
         ### send pubsub notifications out to people subscribed to machines ###
-        # if self.isStateChanged() is True:
-        if True:
+        if self.isStateChanged() is True: #fire notifications off when machine updates
+        # if self.isStateChanged() is True or self.isTimeToRepost() is True: #fire notifications off every 5 minutes or when machine updates
+        # if True: #fire notifications off as fast as possible
             # convert / in topic name to - since pubsub can't handle slashes
             pubSubTopic = publishTopic.replace("/", "-")
             # topic_path = publisher.topic_path("knightwash-webui-angular", pubSubTopic)
@@ -87,6 +84,11 @@ class LaundryMachine:
             future = publisher.publish(topic_path, data)
             print(future.result())
             print("posted to pubsub!")
+
+        if self.isStateChanged() is False and self.isTimeToRepost() is False:
+            return
+        if self.isPowerLevelStable() is False:
+            return
 
         ### update listing on the website ###
         attempts = 0

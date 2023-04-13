@@ -34,6 +34,7 @@ cur.execute(
     "CREATE TABLE IF NOT EXISTS LaundryMachines(name, location, startTime, stopTime)"
 )
 
+
 # Enum for machine status
 class Status(Enum):
     notRunning = 0
@@ -75,9 +76,9 @@ class LaundryMachine:
         print("Writing to database")
         logging.info("Writing to database")
 
-        retry = 0
+        attempts = 0
         retries = 3
-        while retry < retries:
+        while attempts < retries:
             try:
                 cur.execute(
                     f"""

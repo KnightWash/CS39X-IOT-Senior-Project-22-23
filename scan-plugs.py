@@ -62,6 +62,10 @@ class LaundryMachine:
         return False
 
     def handlePublishing(self, mqttClient, publishTopic) -> None:
+        if self.isStateChanged() is False and self.isTimeToRepost() is False:
+            return
+        if self.isPowerLevelStable() is False:
+            return
         if self.currentRun == Status.running:
             displayedMessage = "Posting 'On' to MQTT..."
             payloadMessage = "On|"
@@ -70,25 +74,24 @@ class LaundryMachine:
             payloadMessage = "Off|"
 
         ### send pubsub notifications out to people subscribed to machines ###
-        if self.isStateChanged() is True: #fire notifications off when machine updates
+        # if self.isStateChanged() is True: #fire notifications off when machine updates
         # if self.isStateChanged() is True or self.isTimeToRepost() is True: #fire notifications off every 5 minutes or when machine updates
         # if True: #fire notifications off as fast as possible
+        if (
+            self.isStateChanged() is True and self.currentRun == Status.notRunning
+        ):  # fire notifications when state changes from on to off
             # convert / in topic name to - since pubsub can't handle slashes
             pubSubTopic = publishTopic.replace("/", "-")
             # topic_path = publisher.topic_path("knightwash-webui-angular", pubSubTopic)
             topic_path = publisher.topic_path(
-                "knightwash-webui-angular", "calvin-test-dryer-location")
+                "knightwash-webui-angular", "calvin-test-dryer-location"
+            )
 
-            data = payloadMessage.replace('|', '').encode("utf-8")
+            data = payloadMessage.replace("|", "").encode("utf-8")
             # When you publish a message, the client returns a future.
             future = publisher.publish(topic_path, data)
             print(future.result())
             print("posted to pubsub!")
-
-        if self.isStateChanged() is False and self.isTimeToRepost() is False:
-            return
-        if self.isPowerLevelStable() is False:
-            return
 
         ### update listing on the website ###
         attempts = 0
@@ -98,8 +101,7 @@ class LaundryMachine:
                 mqttClient.publish(
                     publishTopic,
                     qos=1,
-                    payload=(payloadMessage +
-                             str(int(datetime.now().timestamp()))),
+                    payload=(payloadMessage + str(int(datetime.now().timestamp()))),
                     retain=True,
                 )
                 self.previousMachineState = self.currentRun
@@ -110,8 +112,7 @@ class LaundryMachine:
                 attempts += 1
             if attempts >= 3:
                 print(f"Posting failed for {publishTopic} at {self.date}")
-                logging.warning(
-                    f"Posting failed for {publishTopic} at {self.date}")
+                logging.warning(f"Posting failed for {publishTopic} at {self.date}")
             # return
 
 
@@ -158,8 +159,7 @@ async def main():
 
             eMeterCheck = currentPlug.emeter_realtime
             # let's pull the actual number we want out of eMeterCheck
-            powerLevel = float(str(eMeterCheck).split(
-                "=", 1)[1].split(" ", 1)[0])
+            powerLevel = float(str(eMeterCheck).split("=", 1)[1].split(" ", 1)[0])
             print(powerLevel)
 
             client = mqtt.Client("knightwash")
@@ -179,8 +179,7 @@ async def main():
             else:
                 plug.currentRun = Status.notRunning
 
-            plug.handlePublishing(
-                mqttClient=client, publishTopic=currentPlug.alias)
+            plug.handlePublishing(mqttClient=client, publishTopic=currentPlug.alias)
             plug.twoRunsBefore = plug.oneRunBefore
             plug.oneRunBefore = plug.currentRun
             print("=============================================")

@@ -84,7 +84,7 @@ class LaundryMachine:
             pubSubTopic = publishTopic.replace("/", "-")
             # topic_path = publisher.topic_path("knightwash-webui-angular", pubSubTopic)
             topic_path = publisher.topic_path(
-                "knightwash-webui-angular", "calvin-test-dryer-location"
+                "knightwash-webui-angular", pubSubTopic
             )
 
             data = payloadMessage.replace("|", "").encode("utf-8")

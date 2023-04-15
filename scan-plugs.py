@@ -12,6 +12,7 @@ from enum import Enum
 # await plug_1.update() # Request the update
 # print(plug_1.alias) # Print out the alias
 # print(plug_1.emeter_realtime) # Print out current emeter status
+from google.cloud import pubsub_v1
 
 # Logging configuration
 logging.basicConfig(
@@ -26,6 +27,17 @@ logging.basicConfig(
 MQTTServerName = "test.mosquitto.org"
 timeBetweenPosts = 5 * 60  # 5 minutes in seconds
 powerOnThreshold = 11  # power in watts
+
+# pubsub stuff
+publisher = pubsub_v1.PublisherClient()
+# The `topic_path` method creates a fully qualified identifier
+# in the form `projects/{project_id}/topics/{topic_id}`
+
+# pubsub stuff
+publisher = pubsub_v1.PublisherClient()
+# The `topic_path` method creates a fully qualified identifier
+# in the form `projects/{project_id}/topics/{topic_id}`
+
 
 # Database connection
 con = sqlite3.connect("knightwash.db")
@@ -114,6 +126,27 @@ class LaundryMachine:
             displayedMessage = "posting 'Off' to MQTT..."
             payloadMessage = "Off|"
 
+        ### send pubsub notifications out to people subscribed to machines ###
+        # if self.isStateChanged() is True: #fire notifications off when machine updates
+        # if self.isStateChanged() is True or self.isTimeToRepost() is True: #fire notifications off every 5 minutes or when machine updates
+        # if True: #fire notifications off as fast as possible
+        if (
+            self.isStateChanged() is True and self.currentRun == Status.notRunning
+        ):  # fire notifications when state changes from on to off
+            # convert / in topic name to - since pubsub can't handle slashes
+            pubSubTopic = publishTopic.replace("/", "-")
+            # topic_path = publisher.topic_path("knightwash-webui-angular", pubSubTopic)
+            topic_path = publisher.topic_path(
+                "knightwash-webui-angular", "calvin-test-dryer-location"
+            )
+
+            data = payloadMessage.replace("|", "").encode("utf-8")
+            # When you publish a message, the client returns a future.
+            future = publisher.publish(topic_path, data)
+            print(future.result())
+            print("posted to pubsub!")
+
+        ### update listing on the website ###
         attempts = 0
         while attempts < 3:
             try:
@@ -133,7 +166,7 @@ class LaundryMachine:
             if attempts >= 3:
                 print(f"Posting failed for {publishTopic} at {self.date}")
                 logging.warning(f"Posting failed for {publishTopic} at {self.date}")
-        return
+            # return
 
 
 async def main():

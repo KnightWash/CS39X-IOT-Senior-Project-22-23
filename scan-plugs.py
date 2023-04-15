@@ -67,9 +67,9 @@ class LaundryMachine:
 
         self.machineName = ""
         self.location = ""
-        self.startTime = None
-        self.stopTime = None
-        self.runTime = None
+        self.startTime = 0
+        self.stopTime = 0
+        self.runTime = 0
 
     def isTimeToRepost(self) -> bool:
         if int(time.time()) - self.date >= timeBetweenPosts:

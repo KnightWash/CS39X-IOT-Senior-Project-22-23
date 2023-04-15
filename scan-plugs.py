@@ -1,6 +1,7 @@
 import sqlite3
 import asyncio
 import time
+import json
 import logging  # https://docs.python.org/3/howto/logging.html
 import paho.mqtt.client as mqtt
 from kasa import SmartPlug
@@ -33,17 +34,18 @@ publisher = pubsub_v1.PublisherClient()
 # The `topic_path` method creates a fully qualified identifier
 # in the form `projects/{project_id}/topics/{topic_id}`
 
-# pubsub stuff
-publisher = pubsub_v1.PublisherClient()
-# The `topic_path` method creates a fully qualified identifier
-# in the form `projects/{project_id}/topics/{topic_id}`
-
-
 # Database connection
 con = sqlite3.connect("knightwash.db")
 cur = con.cursor()
 cur.execute(
-    "CREATE TABLE IF NOT EXISTS LaundryMachines(name, location, startTime, stopTime)"
+    """CREATE TABLE IF NOT EXISTS LaundryMachines (
+        id integer PRIMARY KEY
+        name text NOT NULL, 
+        location text NOT NULL, 
+        startTime integer, 
+        stopTime integer
+    );
+    """
 )
 
 
@@ -75,11 +77,14 @@ class LaundryMachine:
         return False
 
     def isStateChanged(self) -> bool:
+        """Returns true if the machine state has changed since the last iteration of the loop"""
         if self.currentRun != self.previousMachineState:
             return True
         return False
 
     def isPowerLevelStable(self) -> bool:
+        """Returns true if the power level has remained consistent for the last 3 iterations of the loop.
+        \nEliminates false positives due to random spikes in power levels"""
         if self.currentRun == self.oneRunBefore == self.twoRunsBefore:
             return True
         return False
@@ -104,10 +109,13 @@ class LaundryMachine:
                 break
 
     def handlePublishing(self, mqttClient, publishTopic) -> None:
+        # Return early if these conditions aren't met
         if self.isStateChanged() is False and self.isTimeToRepost() is False:
             return
         if self.isPowerLevelStable() is False:
             return
+
+        # Publish every 5 minutes or when machine state changes, whichever comes first
         if self.currentRun == Status.running:
             if self.isStateChanged():
                 self.startTime = int(time.time())
@@ -146,7 +154,6 @@ class LaundryMachine:
             print(future.result())
             print("posted to pubsub!")
 
-        ### update listing on the website ###
         attempts = 0
         while attempts < 3:
             try:
@@ -167,6 +174,21 @@ class LaundryMachine:
                 print(f"Posting failed for {publishTopic} at {self.date}")
                 logging.warning(f"Posting failed for {publishTopic} at {self.date}")
             # return
+
+
+def publishAnalytics(mqttClient, topic, json_result):
+    """publish the json to machine topic"""
+    mqttClient.publish(topic, payload=json_result)
+    return
+
+
+def query_to_json(conn, query):
+    cur = conn.cursor()
+    cur.execute(query)
+    rows = cur.fetchall()
+    columns = [description[0] for description in cur.description]
+    result = [dict(zip(columns, row)) for row in rows]
+    return json.dumps(result)
 
 
 async def main():

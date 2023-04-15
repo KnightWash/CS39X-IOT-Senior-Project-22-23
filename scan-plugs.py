@@ -87,7 +87,7 @@ class LaundryMachine:
             )
 
             # data = payloadMessage.replace("|", "").encode("utf-8")
-            data = publishTopic
+            data = publishTopic.encode("utf-8")
             # When you publish a message, the client returns a future.
             future = publisher.publish(topic_path, data)
             print(future.result())

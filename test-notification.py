@@ -4,9 +4,9 @@ import time
 publisher = pubsub_v1.PublisherClient()
 
 topic_path = publisher.topic_path(
-    "knightwash-webui-angular", "calvin-test-dryer-location"
+    "knightwash-webui-angular", "machines_pubsub"
 )
-payloadMessage = "Off"
+payloadMessage = "calvin/test/dryer/location"
 data = payloadMessage.encode("utf-8")
 
 while True:

@@ -80,14 +80,14 @@ class LaundryMachine:
         if (
             self.isStateChanged() is True and self.currentRun == Status.notRunning
         ):  # fire notifications when state changes from on to off
-            # convert / in topic name to - since pubsub can't handle slashes
-            pubSubTopic = publishTopic.replace("/", "-")
+            # pubSubMachineName = publishTopic.replace("/", "-") # convert / in topic name to - since pubsub topics can't handle slashes
             # topic_path = publisher.topic_path("knightwash-webui-angular", pubSubTopic)
             topic_path = publisher.topic_path(
-                "knightwash-webui-angular", pubSubTopic
+                "knightwash-webui-angular", "machines_pubsub"
             )
 
-            data = payloadMessage.replace("|", "").encode("utf-8")
+            # data = payloadMessage.replace("|", "").encode("utf-8")
+            data = publishTopic
             # When you publish a message, the client returns a future.
             future = publisher.publish(topic_path, data)
             print(future.result())

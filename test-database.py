@@ -43,7 +43,7 @@ runTime = 0
 
 while True:
     ########### MACHINE TURNS ON #############
-    print("Starting test machine")
+    print("\nStarting test machine")
     client.publish(
         publishTopic,
         qos=1,
@@ -72,7 +72,7 @@ while True:
     print(f"Ran for {runTime} seconds")
 
     ####### TRIGGER CLOUD PUBSUB #######
-    print(f"Sent pubsub message\n")
+    print(f"Sent pubsub message")
     future = publisher.publish(topic_path, data)
     print(future.result())
 

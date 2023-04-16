@@ -51,6 +51,7 @@ def query_to_json(con, query):
     rows = cur.fetchall()
     columns = [description[0] for description in cur.description]
     result = [dict(zip(columns, row)) for row in rows]
+    print("JSON dump: ", result)
     return json.dumps(result)
 
 
@@ -63,6 +64,7 @@ def publishAnalytics():
         payload=payload,
         retain=True,
     )
+    print("PUBLISHED ANALYTICS TO 'calvin/knightwash/analytics'")
     return
 
 

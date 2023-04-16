@@ -128,3 +128,7 @@ while True:
     # Iterate through the rows and print them
     for row in rows:
         print(row)
+
+    ################# SCHEDULED JOB ####################
+    schedule.run_pending()
+    time.sleep(1)

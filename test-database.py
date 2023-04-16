@@ -18,25 +18,35 @@ cur.execute(
     );"""
 )
 
+client = mqtt.Client("knightwash-tester")
 machineName = "calvin/test/dryer/location"
-client = mqtt.Client("knightwash")
 publishTopic = machineName
-machineState = "On|"
 startTime = 0
 stopTime = 0
+runTime = 0
 
 while True:
+    print("Starting test machine")
     client.publish(
         publishTopic,
         qos=1,
-        payload=(machineState + str(int(time.time()))),
+        payload=("On|" + str(int(time.time()))),
         retain=True,
     )
 
-    # Change machine state on each iteration
-    if machineState == "On|":
-        machineState = "Off|"
-    else:
-        machineState = "On|"
-
+    startTime = int(time.time())
     time.sleep(15)
+
+    print("Stopping test machine")
+    client.publish(
+        publishTopic,
+        qos=1,
+        payload=("Off|" + str(int(time.time()))),
+        retain=True,
+    )
+
+    stopTime = int(time.time())
+    runTime = stopTime - startTime
+    print(f"Ran for {runTime} seconds\n")
+
+    time.sleep(10)

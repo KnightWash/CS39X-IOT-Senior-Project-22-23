@@ -12,12 +12,13 @@ con = sqlite3.connect("test.db")
 cur = con.cursor()
 cur.execute(
     """CREATE TABLE IF NOT EXISTS TestMachines (
+        id INTEGER PRIMARY KEY,
         name text NOT NULL, 
         location text NOT NULL, 
         startTime integer, 
         stopTime integer,
         runTime, integer
-    ) WITHOUT ROWID;"""
+    );"""
 )
 
 ########## GOOGLE CLOUD PUBSUB STUFF ###########
@@ -80,8 +81,8 @@ while True:
     ###### WRITE CURRENT RUN INFO TO DATABASE #######
     cur.execute(
         f"""
-        INSERT INTO TestMachines VALUES
-        ('{machineName}', '{location}', {startTime}, {stopTime}, {runTime})
+        INSERT INTO TestMachines (name, location, startTime, stopTime, runTime) 
+        VALUES ('{machineName}', '{location}', {startTime}, {stopTime}, {runTime})
         """
     )
     ##### SLEEP #####

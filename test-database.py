@@ -84,7 +84,7 @@ while True:
     startTime = int(time.time())
 
     ##### SLEEP #####
-    time.sleep(8)
+    time.sleep(10)
 
     ########### MACHINE TURNS OFF ############
     print("Stopping test machine")
@@ -114,7 +114,7 @@ while True:
     )
     print("Wrote to database")
     ##### SLEEP #####
-    time.sleep(8)
+    time.sleep(10)
 
     ########## PRINTING ALL ROWS OF DATABASE ###########
     # Execute the SELECT statement

@@ -11,7 +11,7 @@ from google.cloud import pubsub_v1
 con = sqlite3.connect("test.db")
 cur = con.cursor()
 cur.execute(
-    """CREATE TABLE IF NOT EXISTS LaundryMachines (
+    """CREATE TABLE IF NOT EXISTS TestMachines (
         name text NOT NULL, 
         location text NOT NULL, 
         startTime integer, 
@@ -80,7 +80,7 @@ while True:
     ###### WRITE CURRENT RUN INFO TO DATABASE #######
     cur.execute(
         f"""
-        INSERT INTO LaundryMachines VALUES
+        INSERT INTO TestMachines VALUES
         ('{machineName}', '{location}', {startTime}, {stopTime}, {runTime})
         """
     )

@@ -85,5 +85,6 @@ while True:
         VALUES ('{machineName}', '{location}', {startTime}, {stopTime}, {runTime})
         """
     )
+    print("Wrote to database")
     ##### SLEEP #####
     time.sleep(8)

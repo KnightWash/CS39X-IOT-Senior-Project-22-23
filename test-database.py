@@ -56,7 +56,7 @@ while True:
     startTime = int(time.time())
 
     ##### SLEEP #####
-    time.sleep(15)
+    time.sleep(8)
 
     ########### MACHINE TURNS OFF ############
     print("Stopping test machine")
@@ -85,4 +85,4 @@ while True:
         """
     )
     ##### SLEEP #####
-    time.sleep(10)
+    time.sleep(8)

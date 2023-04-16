@@ -19,6 +19,8 @@ cur.execute(
 )
 
 client = mqtt.Client("knightwash-tester")
+client.connect(MQTTServerName)
+
 machineName = "calvin/test/dryer/location"
 publishTopic = machineName
 startTime = 0

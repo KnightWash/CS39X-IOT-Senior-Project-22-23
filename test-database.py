@@ -15,7 +15,8 @@ cur.execute(
         name text NOT NULL, 
         location text NOT NULL, 
         startTime integer, 
-        stopTime integer
+        stopTime integer,
+        runTime, integer
     );"""
 )
 

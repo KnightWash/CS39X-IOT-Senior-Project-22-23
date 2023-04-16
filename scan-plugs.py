@@ -44,8 +44,7 @@ cur.execute(
         location text NOT NULL, 
         startTime integer, 
         stopTime integer
-    );
-    """
+    );"""
 )
 
 

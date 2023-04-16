@@ -2,10 +2,12 @@ import sqlite3
 import time
 import json
 import paho.mqtt.client as mqtt
+from google.cloud import pubsub_v1
 
-MQTTServerName = "test.mosquitto.org"
+####
 
-# Create database table
+
+########## Create database table ##############
 con = sqlite3.connect("test.db")
 cur = con.cursor()
 cur.execute(
@@ -18,16 +20,29 @@ cur.execute(
     );"""
 )
 
+########## GOOGLE CLOUD PUBSUB STUFF ###########
+publisher = pubsub_v1.PublisherClient()
+topic_path = publisher.topic_path("knightwash-webui-angular", "machines_pubsub")
+payloadMessage = "calvin/test/dryer/location"
+data = payloadMessage.encode("utf-8")
+################################################
+
+############## MQTT CLIENT STUFF ###############
+MQTTServerName = "test.mosquitto.org"
 client = mqtt.Client("knightwash-tester")
 client.connect(MQTTServerName)
+################################################
 
+########### MACHINE INFO #######################
 machineName = "calvin/test/dryer/location"
 publishTopic = machineName
 startTime = 0
 stopTime = 0
 runTime = 0
+################################################
 
 while True:
+    ########### MACHINE TURNS ON #############
     print("Starting test machine")
     client.publish(
         publishTopic,
@@ -36,9 +51,13 @@ while True:
         retain=True,
     )
 
+    ###### LOG START TIME #######
     startTime = int(time.time())
+
+    ##### SLEEP #####
     time.sleep(15)
 
+    ########### MACHINE TURNS OFF ############
     print("Stopping test machine")
     client.publish(
         publishTopic,
@@ -47,8 +66,14 @@ while True:
         retain=True,
     )
 
+    ###### LOG STOP TIME ########
     stopTime = int(time.time())
     runTime = stopTime - startTime
     print(f"Ran for {runTime} seconds\n")
 
+    ####### TRIGGER CLOUD PUBSUB #######
+    future = publisher.publish(topic_path, data)
+    print(future.result())
+
+    ##### SLEEP #####
     time.sleep(10)

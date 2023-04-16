@@ -12,7 +12,6 @@ con = sqlite3.connect("test.db")
 cur = con.cursor()
 cur.execute(
     """CREATE TABLE IF NOT EXISTS LaundryMachines (
-        id integer PRIMARY KEY,
         name text NOT NULL, 
         location text NOT NULL, 
         startTime integer, 

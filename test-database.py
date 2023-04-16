@@ -117,6 +117,7 @@ while True:
         VALUES ('{machineName}', '{location}', {startTime}, {stopTime}, {runTime})
         """
     )
+    con.commit()
     print("Wrote to database")
     ##### SLEEP #####
     time.sleep(10)

@@ -35,6 +35,7 @@ client.connect(MQTTServerName)
 
 ########### MACHINE INFO #######################
 machineName = "calvin/test/dryer/location"
+location = machineName.split("/")[1]
 publishTopic = machineName
 startTime = 0
 stopTime = 0
@@ -76,5 +77,12 @@ while True:
     future = publisher.publish(topic_path, data)
     print(future.result())
 
+    ###### WRITE CURRENT RUN INFO TO DATABASE #######
+    cur.execute(
+        f"""
+        INSERT INTO LaundryMachines VALUES
+        ('{machineName}', '{location}', {startTime}, {stopTime}, {runTime})
+        """
+    )
     ##### SLEEP #####
     time.sleep(10)

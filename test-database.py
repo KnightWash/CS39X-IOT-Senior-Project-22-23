@@ -17,7 +17,7 @@ cur.execute(
         startTime integer, 
         stopTime integer,
         runTime, integer
-    );"""
+    ) WITHOUT ROWID;"""
 )
 
 ########## GOOGLE CLOUD PUBSUB STUFF ###########

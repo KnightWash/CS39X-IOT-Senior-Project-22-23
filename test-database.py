@@ -69,9 +69,10 @@ while True:
     ###### LOG STOP TIME ########
     stopTime = int(time.time())
     runTime = stopTime - startTime
-    print(f"Ran for {runTime} seconds\n")
+    print(f"Ran for {runTime} seconds")
 
     ####### TRIGGER CLOUD PUBSUB #######
+    print(f"Sent pubsub message\n")
     future = publisher.publish(topic_path, data)
     print(future.result())
 

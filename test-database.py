@@ -58,13 +58,16 @@ def query_to_json(con, query):
 def publishAnalytics():
     selectAllQuery = "SELECT * FROM TestMachines"
     payload = query_to_json(con, selectAllQuery)
-    client.publish(
-        "calvin/knightwash/analytics",
-        qos=1,
-        payload=payload,
-        retain=True,
-    )
-    print("PUBLISHED ANALYTICS TO 'calvin/knightwash/analytics'")
+    try:
+        client.publish(
+            "calvin/knightwash/analytics",
+            qos=1,
+            payload=payload,
+            retain=True,
+        )
+        print("PUBLISHED ANALYTICS TO 'calvin/knightwash/analytics'")
+    except:
+        print("FAILED TO PUBLISH ANALYTICS")
     return
 
 

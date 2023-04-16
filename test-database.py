@@ -1,5 +1,6 @@
 import sqlite3
 import time
+import schedule
 import json
 import paho.mqtt.client as mqtt
 from google.cloud import pubsub_v1
@@ -42,6 +43,32 @@ startTime = 0
 stopTime = 0
 runTime = 0
 ################################################
+
+
+def query_to_json(con, query):
+    cur = con.cursor()
+    cur.execute(query)
+    rows = cur.fetchall()
+    columns = [description[0] for description in cur.description]
+    result = [dict(zip(columns, row)) for row in rows]
+    return json.dumps(result)
+
+
+def publishAnalytics():
+    selectAllQuery = "SELECT * FROM TestMachines"
+    payload = query_to_json(con, selectAllQuery)
+    client.publish(
+        "calvin/knightwash/analytics",
+        qos=1,
+        payload=payload,
+        retain=True,
+    )
+    return
+
+
+######## SCHEDULED FUNCTION TO PUBILSH ANALYTICS EVERY n MINUTES #########
+n = 1
+schedule.every(n).minutes.do(publishAnalytics)
 
 while True:
     ########### MACHINE TURNS ON #############

@@ -88,3 +88,14 @@ while True:
     print("Wrote to database")
     ##### SLEEP #####
     time.sleep(8)
+
+    ########## PRINTING ALL ROWS OF DATABASE ###########
+    # Execute the SELECT statement
+    cur.execute("SELECT * FROM TestMachines")
+
+    # Fetch all rows
+    rows = cur.fetchall()
+
+    # Iterate through the rows and print them
+    for row in rows:
+        print(row)

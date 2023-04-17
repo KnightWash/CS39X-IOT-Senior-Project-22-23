@@ -1,18 +1,14 @@
 import sqlite3
 import asyncio
 import time
+from datetime import datetime
+import pytz
+import schedule
 import json
 import logging  # https://docs.python.org/3/howto/logging.html
 import paho.mqtt.client as mqtt
 from kasa import SmartPlug
 from enum import Enum
-
-#### python-kasa reference code ####
-#### https://python-kasa.readthedocs.io/en/latest/smartdevice.html ####
-# plug_1 = SmartPlug("153.106.213.230")
-# await plug_1.update() # Request the update
-# print(plug_1.alias) # Print out the alias
-# print(plug_1.emeter_realtime) # Print out current emeter status
 from google.cloud import pubsub_v1
 
 # Logging configuration
@@ -23,6 +19,9 @@ logging.basicConfig(
     format="%(asctime)s %(message)s",
     datefmt="%m/%d/%Y %I:%M:%S %p",
 )
+
+analyticsLocations = ("bolt", "heyns", "timmer")
+"""Names of the hall to publish analytics to"""
 
 # Variables
 MQTTServerName = "test.mosquitto.org"
@@ -35,15 +34,19 @@ publisher = pubsub_v1.PublisherClient()
 # in the form `projects/{project_id}/topics/{topic_id}`
 
 # Database connection
-con = sqlite3.connect("knightwash.db")
+est = pytz.timezone("US/Eastern")
+dbPath = "knightwash.db"
+con = sqlite3.connect(dbPath)
 cur = con.cursor()
 cur.execute(
-    """CREATE TABLE IF NOT EXISTS LaundryMachines (
-        id integer PRIMARY KEY,
-        name text NOT NULL, 
-        location text NOT NULL, 
-        startTime integer, 
-        stopTime integer
+    """CREATE TABLE IF NOT EXISTS TestMachines (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL, 
+        location TEXT NOT NULL, 
+        startTime INTEGER, 
+        stopTime INTEGER,
+        startTimeRounded INTEGER,
+        runTime INTEGER
     );"""
 )
 
@@ -68,6 +71,7 @@ class LaundryMachine:
         self.location = ""
         self.startTime = 0
         self.stopTime = 0
+        self.startTimeRounded = 0
         self.runTime = 0
 
     def isTimeToRepost(self) -> bool:
@@ -98,13 +102,15 @@ class LaundryMachine:
             try:
                 cur.execute(
                     f"""
-                    INSERT INTO LaundryMachines VALUES
-                    ('{self.machineName}', '{self.location}', {self.startTime}, {self.stopTime}, {self.runTime})
+                    INSERT INTO TestMachines (name, location, startTime, stopTime, startTimeRounded, runTime) 
+                    VALUES ('{self.machineName}', '{self.location}', {self.startTime}, {self.stopTime}, {self.startTimeRounded}, {self.runTime})
                     """
                 )
+                con.commit()
             except:
                 logging.warning("Failed writing to database, retrying...")
             else:
+                print("Wrote to database")
                 break
 
     def handlePublishing(self, mqttClient, publishTopic) -> None:
@@ -117,14 +123,15 @@ class LaundryMachine:
         # Publish every 5 minutes or when machine state changes, whichever comes first
         if self.currentRun == Status.running:
             if self.isStateChanged():
-                self.startTime = int(time.time())
+                self.startTime = getCurrentUnixTime()
+                self.startTimeRounded = roundTimeToHour(self.startTime)
                 print("Machine started")
                 logging.info("Machine started")
             displayedMessage = "Posting 'On' to MQTT..."
             payloadMessage = "On|"
         else:
             if self.isStateChanged():
-                self.stopTime = int(time.time())
+                self.stopTime = getCurrentUnixTime()
                 print("Machine stopped")
                 self.runTime = (
                     self.stopTime - self.startTime
@@ -160,7 +167,7 @@ class LaundryMachine:
                 mqttClient.publish(
                     publishTopic,
                     qos=1,
-                    payload=(payloadMessage + str(int(time.time()))),
+                    payload=(payloadMessage + str(self.startTime)),
                     retain=True,
                 )
                 self.previousMachineState = self.currentRun
@@ -175,19 +182,49 @@ class LaundryMachine:
             # return
 
 
-def publishAnalytics(mqttClient, topic, json_result):
-    """publish the json to machine topic"""
-    mqttClient.publish(topic, payload=json_result)
+def publishAnalytics(mqttClient):
+    for location in analyticsLocations:
+        selectLastWeekInfo = f"SELECT startTimeRounded as hour, COUNT(*) as count FROM TestMachines WHERE startTime >= strftime('%s', datetime('now', '-7 days')) AND location='{location}' GROUP BY startTimeRounded;"
+        payload = queryToJson(con, selectLastWeekInfo)
+        try:
+            print(f"PUBLISHING ANALYTICS TO 'calvin/knightwash/{location}'")
+            mqttClient.publish(
+                f"calvin/knightwash/analytics/{location}",
+                qos=1,
+                payload=payload,
+                retain=True,
+            )
+        except:
+            print("FAILED TO PUBLISH ANALYTICS")
+            logging.warning("FAILED TO PUBLISH ANALYTICS to ")
+        else:
+            print("SUCCESSFULLY PUBLISHED ANALYTICS")
     return
 
 
-def query_to_json(conn, query):
-    cur = conn.cursor()
+def queryToJson(conn, query):
+    """Executes an sql query and returns the results as a json formatted string"""
+    cur = con.cursor()
     cur.execute(query)
     rows = cur.fetchall()
     columns = [description[0] for description in cur.description]
     result = [dict(zip(columns, row)) for row in rows]
+    print("JSON dump: ", result)
     return json.dumps(result)
+
+
+def roundTimeToHour(unix_time):
+    dt = datetime.fromtimestamp(unix_time)
+    rounded_dt = dt.replace(minute=0, second=0)
+    return rounded_dt.hour
+
+
+def getCurrentDateTime():
+    return datetime.now(est)
+
+
+def getCurrentUnixTime():
+    return int(getCurrentDateTime().timestamp())
 
 
 async def main():
@@ -210,6 +247,9 @@ async def main():
     # print(plugList[0].previousMachineState)
     # print(plugList[0].IP)
     print(plugList)
+
+    # Scheduling publishAnalytics() to run every day at midnight
+    schedule.every().day.at("00:00").do(publishAnalytics)
 
     while True:
         for plug in plugList:
@@ -259,6 +299,10 @@ async def main():
             plug.twoRunsBefore = plug.oneRunBefore
             plug.oneRunBefore = plug.currentRun
             print("=============================================")
+
+        # Running publishAnalytics function every day at midnight
+        schedule.run_pending()
+        time.sleep(1)
 
 
 if __name__ == "__main__":

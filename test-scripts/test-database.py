@@ -35,8 +35,6 @@ data = payloadMessage.encode("utf-8")
 
 ############## MQTT CLIENT STUFF ###############
 MQTTServerName = "test.mosquitto.org"
-client = mqtt.Client("knightwash-tester")
-client.connect(MQTTServerName)
 ################################################
 
 ########### MACHINE INFO #######################
@@ -102,6 +100,10 @@ while True:
     # startTime = int(time.time())
     startTime = getCurrentUnixTime()
     startTimeRounded = roundTimeToHour(startTime)
+
+    ####### MQTT CONNECTION ############
+    client = mqtt.Client("knightwash-tester")
+    client.connect(MQTTServerName)
 
     ########### MACHINE TURNS ON #############
     print("\nStarting test machine")

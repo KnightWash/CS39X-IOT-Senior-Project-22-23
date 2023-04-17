@@ -26,6 +26,7 @@ analyticsLocations = ("bolt", "heyns", "timmer")
 # Variables
 MQTTServerName = "test.mosquitto.org"
 timeBetweenPosts = 5 * 60  # 5 minutes in seconds
+timeBetweenAnalyticsPosts = 3600 * 12  # 12 hours
 powerOnThreshold = 11  # power in watts
 
 # pubsub stuff
@@ -66,6 +67,7 @@ class LaundryMachine:
         self.previousMachineState = Status.unknown
         self.IP = str("127.0.0.1")
         self.date = 0
+        self.analyticsPostDate = 0
 
         self.machineName = ""
         self.location = ""
@@ -181,30 +183,40 @@ class LaundryMachine:
                 logging.warning(f"Posting failed for {publishTopic} at {self.date}")
             # return
 
+    def isTimeToPublishAnalytics(self):
+        if int(time.time()) - self.analyticsPostDate >= timeBetweenAnalyticsPosts:
+            self.analyticsPostDate = int(time.time())
+            return True
+        return False
 
-def publishAnalytics(mqttClient):
-    for location in analyticsLocations:
-        selectLastWeekInfo = f"SELECT startTimeRounded as hour, COUNT(*) as count FROM TestMachines WHERE startTime >= strftime('%s', datetime('now', '-7 days')) AND location='{location}' GROUP BY startTimeRounded;"
-        payload = queryToJson(con, selectLastWeekInfo)
-        try:
-            print(f"PUBLISHING ANALYTICS TO 'calvin/knightwash/{location}'")
-            mqttClient.publish(
-                f"calvin/knightwash/analytics/{location}",
-                qos=1,
-                payload=payload,
-                retain=True,
-            )
-        except:
-            print(f"FAILED TO PUBLISH ANALYTICS to 'calvin/knightwash/{location}'")
-            logging.warning(
-                f"FAILED TO PUBLISH ANALYTICS to 'calvin/knightwash/{location}'"
-            )
-        else:
-            print(f"SUCCESSFULLY PUBLISHED ANALYTICS to 'calvin/knightwash/{location}'")
-    return
+    def handlePublishAnalytics(self, mqttClient):
+        if self.isTimeToPublishAnalytics():
+            for location in analyticsLocations:
+                selectLastWeekInfo = f"SELECT startTimeRounded as hour, COUNT(*) as count FROM TestMachines WHERE startTime >= strftime('%s', datetime('now', '-7 days')) AND location='{location}' GROUP BY startTimeRounded;"
+                payload = queryToJson(selectLastWeekInfo)
+                try:
+                    print(f"PUBLISHING ANALYTICS TO 'calvin/knightwash/{location}'")
+                    mqttClient.publish(
+                        f"calvin/knightwash/analytics/{location}",
+                        qos=1,
+                        payload=payload,
+                        retain=True,
+                    )
+                except:
+                    print(
+                        f"FAILED TO PUBLISH ANALYTICS to 'calvin/knightwash/{location}'"
+                    )
+                    logging.warning(
+                        f"FAILED TO PUBLISH ANALYTICS to 'calvin/knightwash/{location}'"
+                    )
+                else:
+                    print(
+                        f"SUCCESSFULLY PUBLISHED ANALYTICS to 'calvin/knightwash/{location}'"
+                    )
+        return
 
 
-def queryToJson(con, query):
+def queryToJson(query):
     """Executes an sql query and returns the results as a json formatted string"""
     cur = con.cursor()
     cur.execute(query)

@@ -169,7 +169,7 @@ class LaundryMachine:
                 mqttClient.publish(
                     publishTopic,
                     qos=1,
-                    payload=(payloadMessage + int(time.time())),
+                    payload=(payloadMessage + str(int(time.time()))),
                     retain=True,
                 )
                 self.previousMachineState = self.currentRun

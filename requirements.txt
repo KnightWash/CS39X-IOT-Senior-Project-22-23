@@ -1,2 +1,6 @@
+pip
 python-kasa
 paho-mqtt
+google-cloud-pubsub
+sqlite3
+pytz

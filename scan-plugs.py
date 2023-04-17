@@ -2,7 +2,6 @@ import sqlite3
 import asyncio
 import time
 from datetime import datetime
-import pytz
 import schedule
 import json
 import logging  # https://docs.python.org/3/howto/logging.html
@@ -22,10 +21,11 @@ logging.basicConfig(
 
 analyticsLocations = ("bolt", "heyns", "timmer")
 """Names of the hall to publish analytics to"""
+analyticsClient = mqtt.Client("knightwash-analytics")
 
 # Variables
 MQTTServerName = "test.mosquitto.org"
-timeBetweenPosts = 5 * 60  # 5 minutes in seconds
+timeBetweenPosts = 2 * 60  # 2 minutes in seconds
 # timeBetweenAnalyticsPosts = 3600 * 12  # 12 hours
 timeBetweenAnalyticsPosts = 60
 powerOnThreshold = 11  # power in watts
@@ -36,7 +36,6 @@ publisher = pubsub_v1.PublisherClient()
 # in the form `projects/{project_id}/topics/{topic_id}`
 
 # Database connection
-est = pytz.timezone("US/Eastern")
 dbPath = "knightwash.db"
 con = sqlite3.connect(dbPath)
 cur = con.cursor()
@@ -162,6 +161,8 @@ class LaundryMachine:
             future = publisher.publish(topic_path, data)
             print(future.result())
             print("posted to pubsub!")
+            self.writeToDatabase()
+            print("stored last run info in database")
 
         attempts = 0
         while attempts < 3:
@@ -195,10 +196,12 @@ class LaundryMachine:
             for location in analyticsLocations:
                 selectLastWeekInfo = f"SELECT startTimeRounded as hour, COUNT(*) as count FROM TestMachines WHERE startTime >= strftime('%s', datetime('now', '-7 days')) AND location='{location}' GROUP BY startTimeRounded;"
                 payload = queryToJson(selectLastWeekInfo)
+                publishTopic = f"calvin/knightwash/analytics/{location}"
                 try:
-                    print(f"PUBLISHING ANALYTICS TO 'calvin/knightwash/{location}'")
+                    print(f"PUBLISHING ANALYTICS TO '{publishTopic}'")
+                    mqttClient.connect(MQTTServerName)
                     mqttClient.publish(
-                        f"calvin/knightwash/analytics/{location}",
+                        publishTopic,
                         qos=1,
                         payload=payload,
                         retain=True,
@@ -234,12 +237,8 @@ def roundTimeToHour(unix_time):
     return rounded_dt.hour
 
 
-def getCurrentDateTime():
-    return datetime.now(est)
-
-
 def getCurrentUnixTime():
-    return int(getCurrentDateTime().timestamp())
+    return int(time.time())
 
 
 async def main():
@@ -303,10 +302,10 @@ async def main():
                 plug.currentRun = Status.notRunning
 
             plug.handlePublishing(mqttClient=client, publishTopic=currentPlug.alias)
-            plug.handlePublishAnalytics(mqttClient=client)
             plug.twoRunsBefore = plug.oneRunBefore
             plug.oneRunBefore = plug.currentRun
             print("=============================================")
+        plug.handlePublishAnalytics(mqttClient=analyticsClient)
 
 
 if __name__ == "__main__":

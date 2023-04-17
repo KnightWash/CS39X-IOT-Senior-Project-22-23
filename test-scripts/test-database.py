@@ -1,7 +1,7 @@
 import sqlite3
 from time import sleep
 from datetime import datetime
-import pytz
+import time
 import schedule
 import json
 import paho.mqtt.client as mqtt
@@ -11,7 +11,6 @@ from google.cloud import pubsub_v1
 ########## Create database table ##############
 
 dbPath = "test.db"
-est = pytz.timezone("US/Eastern")
 
 con = sqlite3.connect(dbPath)
 cur = con.cursor()
@@ -28,10 +27,10 @@ cur.execute(
 )
 
 ########## GOOGLE CLOUD PUBSUB STUFF ###########
-# publisher = pubsub_v1.PublisherClient()
-# topic_path = publisher.topic_path("knightwash-webui-angular", "machines_pubsub")
-# payloadMessage = "calvin/test/dryer/location"
-# data = payloadMessage.encode("utf-8")
+publisher = pubsub_v1.PublisherClient()
+topic_path = publisher.topic_path("knightwash-webui-angular", "machines_pubsub")
+payloadMessage = "calvin/test/dryer/location"
+data = payloadMessage.encode("utf-8")
 ################################################
 
 ############## MQTT CLIENT STUFF ###############
@@ -50,12 +49,12 @@ runTime = 0
 ################################################
 
 
-def getCurrentDateTime():
-    return datetime.now(est)
+# def getCurrentDateTime():
+#     return datetime.now(est)
 
 
 def getCurrentUnixTime():
-    return int(getCurrentDateTime().timestamp())
+    return int(time.time())
 
 
 def queryToJson(con, query):
@@ -113,8 +112,8 @@ while True:
         retain=True,
     )
 
-    ##### SLEEP #####
-    sleep(10)
+    ##### Machine runs for 30 seconds #####
+    sleep(30)
 
     ########### MACHINE TURNS OFF ############
     print("Stopping test machine")
@@ -131,9 +130,10 @@ while True:
     print(f"Ran for {runTime} seconds")
 
     ####### TRIGGER CLOUD PUBSUB #######
-    # print(f"Sent pubsub message")
-    # future = publisher.publish(topic_path, data)
-    # print(future.result())
+    print(f"Sent pubsub message")
+    future = publisher.publish(topic_path, data)
+    print(future.result())
+    ####################################
 
     ###### WRITE CURRENT RUN INFO TO DATABASE #######
     cur.execute(
@@ -144,8 +144,10 @@ while True:
     )
     con.commit()
     print("Wrote to database")
-    ##### SLEEP #####
-    sleep(10)
+    ###################################################
+
+    ##### Machine turns off for 30 seconds #####
+    sleep(30)
 
     ########## PRINTING ALL ROWS OF DATABASE ###########
     # Execute the SELECT statement

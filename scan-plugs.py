@@ -169,7 +169,7 @@ class LaundryMachine:
                 mqttClient.publish(
                     publishTopic,
                     qos=1,
-                    payload=(payloadMessage + str(self.startTime)),
+                    payload=(payloadMessage + int(time.time())),
                     retain=True,
                 )
                 self.previousMachineState = self.currentRun
@@ -255,16 +255,7 @@ async def main():
         plugList[i].IP = IPList[i]
         plugList[i].previousMachineState = Status.unknown
         plugList[i].date = 0
-
-    # print(plugList[0].oneRunBefore)
-    # print(plugList[0].twoRunsBefore)
-    # print(plugList[0].previousMachineState)
-    # print(plugList[0].IP)
     print(plugList)
-
-    # Scheduling publishAnalytics() to run every day at midnight
-    # schedule.every().day.at("00:00").do(publishAnalytics)
-    # schedule.every(1).minutes.do(publishAnalytics)
 
     while True:
         for plug in plugList:
@@ -315,10 +306,6 @@ async def main():
             plug.twoRunsBefore = plug.oneRunBefore
             plug.oneRunBefore = plug.currentRun
             print("=============================================")
-
-        # Running publishAnalytics function every day at midnight
-        # schedule.run_pending()
-        # time.sleep(1)
 
 
 if __name__ == "__main__":

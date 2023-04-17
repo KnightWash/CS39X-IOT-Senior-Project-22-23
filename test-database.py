@@ -75,7 +75,7 @@ def roundTimeToHour(unix_time):
 
 
 def publishAnalytics():
-    selectLastWeekInfo = "SELECT startTimeRounded, COUNT(*) FROM TestMachines WHERE startTime >= strftime('%s', datetime('now', '-15 minutes')) AND location='new';"
+    selectLastWeekInfo = "SELECT startTimeRounded, COUNT(*) FROM TestMachines WHERE startTime >= strftime('%s', datetime('now', '-15 minutes')) AND location='new' GROUP BY startTimeRounded;"
     payload = queryToJson(con, selectLastWeekInfo)
     try:
         print("PUBLISHING ANALYTICS TO 'calvin/knightwash/analytics'")

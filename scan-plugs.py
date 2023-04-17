@@ -26,7 +26,8 @@ analyticsLocations = ("bolt", "heyns", "timmer")
 # Variables
 MQTTServerName = "test.mosquitto.org"
 timeBetweenPosts = 5 * 60  # 5 minutes in seconds
-timeBetweenAnalyticsPosts = 3600 * 12  # 12 hours
+# timeBetweenAnalyticsPosts = 3600 * 12  # 12 hours
+timeBetweenAnalyticsPosts = 60
 powerOnThreshold = 11  # power in watts
 
 # pubsub stuff

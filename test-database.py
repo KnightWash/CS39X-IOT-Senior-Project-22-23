@@ -147,7 +147,7 @@ while True:
 
     ########## PRINTING ALL ROWS OF DATABASE ###########
     # Execute the SELECT statement
-    cur.execute("SELECT * FROM TestMachines WHERE ")
+    cur.execute("SELECT * FROM TestMachines")
 
     # Fetch all rows
     rows = cur.fetchall()

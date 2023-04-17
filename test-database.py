@@ -81,7 +81,7 @@ def publishAnalytics():
         print("PUBLISHING ANALYTICS TO 'calvin/knightwash/analytics'")
         client.publish(
             "calvin/knightwash/analytics",
-            qos=2,
+            qos=1,
             payload=payload,
             retain=True,
         )

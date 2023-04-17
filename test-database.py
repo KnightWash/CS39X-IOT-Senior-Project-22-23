@@ -80,6 +80,7 @@ def publishAnalytics():
     try:
         print("PUBLISHING ANALYTICS TO 'calvin/knightwash/analytics'")
         analyticsClient = mqtt.Client("knightwash-analytics")
+        analyticsClient.connect(MQTTServerName)
         analyticsClient.publish(
             "calvin/knightwash/analytics",
             qos=1,

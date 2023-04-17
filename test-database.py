@@ -28,10 +28,10 @@ cur.execute(
 )
 
 ########## GOOGLE CLOUD PUBSUB STUFF ###########
-publisher = pubsub_v1.PublisherClient()
-topic_path = publisher.topic_path("knightwash-webui-angular", "machines_pubsub")
-payloadMessage = "calvin/test/dryer/location"
-data = payloadMessage.encode("utf-8")
+# publisher = pubsub_v1.PublisherClient()
+# topic_path = publisher.topic_path("knightwash-webui-angular", "machines_pubsub")
+# payloadMessage = "calvin/test/dryer/location"
+# data = payloadMessage.encode("utf-8")
 ################################################
 
 ############## MQTT CLIENT STUFF ###############
@@ -131,9 +131,9 @@ while True:
     print(f"Ran for {runTime} seconds")
 
     ####### TRIGGER CLOUD PUBSUB #######
-    print(f"Sent pubsub message")
-    future = publisher.publish(topic_path, data)
-    print(future.result())
+    # print(f"Sent pubsub message")
+    # future = publisher.publish(topic_path, data)
+    # print(future.result())
 
     ###### WRITE CURRENT RUN INFO TO DATABASE #######
     cur.execute(

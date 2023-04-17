@@ -304,8 +304,8 @@ async def main():
             print("=============================================")
 
         # Running publishAnalytics function every day at midnight
-        schedule.run_pending()
-        time.sleep(1)
+        # schedule.run_pending()
+        # time.sleep(1)
 
 
 if __name__ == "__main__":

@@ -41,7 +41,7 @@ client.connect(MQTTServerName)
 ################################################
 
 ########### MACHINE INFO #######################
-machineName = "calvin/test/dryer/location"
+machineName = "calvin/new/dryer/location"
 location = machineName.split("/")[1]
 publishTopic = machineName
 startTime = 0
@@ -75,7 +75,7 @@ def roundTimeToHour(unix_time):
 
 
 def publishAnalytics():
-    selectLastWeekInfo = "SELECT location, startTimeRounded FROM TestMachines WHERE startTime >= strftime('%s', datetime('now', '-7 minutes'));"
+    selectLastWeekInfo = "SELECT startTimeRounded, COUNT(*) FROM TestMachines WHERE startTime >= strftime('%s', datetime('now', '-15 minutes')) AND location='new';"
     payload = queryToJson(con, selectLastWeekInfo)
     try:
         print("PUBLISHING ANALYTICS TO 'calvin/knightwash/analytics'")

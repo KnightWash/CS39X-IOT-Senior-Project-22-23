@@ -1,24 +1,29 @@
 import sqlite3
 import time
+import datetime
+import pytz
 import schedule
 import json
 import paho.mqtt.client as mqtt
 from google.cloud import pubsub_v1
 
-####
-
 
 ########## Create database table ##############
-con = sqlite3.connect("test.db")
+
+dbPath = "test.db"
+est = pytz.timezone("US/Eastern")
+
+con = sqlite3.connect(dbPath)
 cur = con.cursor()
 cur.execute(
     """CREATE TABLE IF NOT EXISTS TestMachines (
         id INTEGER PRIMARY KEY,
-        name text NOT NULL, 
-        location text NOT NULL, 
-        startTime integer, 
-        stopTime integer,
-        runTime integer
+        name TEXT NOT NULL, 
+        location TEXT NOT NULL, 
+        startTime INTEGER, 
+        stopTime INTEGER,
+        startTimeRounded INTEGER,
+        runTime INTEGER
     );"""
 )
 
@@ -45,7 +50,15 @@ runTime = 0
 ################################################
 
 
-def query_to_json(con, query):
+def getCurrentDateTime():
+    return datetime.datetime.now(est)
+
+
+def getCurrentUnixTime():
+    return int(getCurrentDateTime().timestamp())
+
+
+def queryToJson(con, query):
     cur = con.cursor()
     cur.execute(query)
     rows = cur.fetchall()
@@ -55,19 +68,27 @@ def query_to_json(con, query):
     return json.dumps(result)
 
 
+def roundTimeToHour(unix_time):
+    dt = datetime.fromtimestamp(unix_time)
+    rounded_dt = dt.replace(minute=0, second=0)
+    return rounded_dt.hour
+
+
 def publishAnalytics():
-    selectAllQuery = "SELECT * FROM TestMachines"
-    payload = query_to_json(con, selectAllQuery)
+    selectLastWeekInfo = "SELECT * FROM TestMachines"
+    payload = queryToJson(con, selectLastWeekInfo)
     try:
+        print("PUBLISHING ANALYTICS TO 'calvin/knightwash/analytics'")
         client.publish(
             "calvin/knightwash/analytics",
-            qos=1,
+            qos=2,
             payload=payload,
             retain=True,
         )
-        print("PUBLISHED ANALYTICS TO 'calvin/knightwash/analytics'")
     except:
         print("FAILED TO PUBLISH ANALYTICS")
+    else:
+        print("SUCCESSFULLY PUBLISHED ANALYTICS")
     return
 
 
@@ -86,7 +107,9 @@ while True:
     )
 
     ###### LOG START TIME #######
-    startTime = int(time.time())
+    # startTime = int(time.time())
+    startTime = getCurrentUnixTime()
+    startTimeRounded = roundTimeToHour(startTime)
 
     ##### SLEEP #####
     time.sleep(10)
@@ -101,7 +124,7 @@ while True:
     )
 
     ###### LOG STOP TIME ########
-    stopTime = int(time.time())
+    stopTime = getCurrentUnixTime()
     runTime = stopTime - startTime
     print(f"Ran for {runTime} seconds")
 
@@ -113,8 +136,8 @@ while True:
     ###### WRITE CURRENT RUN INFO TO DATABASE #######
     cur.execute(
         f"""
-        INSERT INTO TestMachines (name, location, startTime, stopTime, runTime) 
-        VALUES ('{machineName}', '{location}', {startTime}, {stopTime}, {runTime})
+        INSERT INTO TestMachines (name, location, startTime, stopTime, startTimeRounded, runTime) 
+        VALUES ('{machineName}', '{location}', {startTime}, {stopTime}, {startTimeRounded}, {runTime})
         """
     )
     con.commit()
@@ -124,7 +147,7 @@ while True:
 
     ########## PRINTING ALL ROWS OF DATABASE ###########
     # Execute the SELECT statement
-    cur.execute("SELECT * FROM TestMachines")
+    cur.execute("SELECT * FROM TestMachines WHERE ")
 
     # Fetch all rows
     rows = cur.fetchall()

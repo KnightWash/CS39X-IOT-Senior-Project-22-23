@@ -264,7 +264,7 @@ async def main():
 
     # Scheduling publishAnalytics() to run every day at midnight
     # schedule.every().day.at("00:00").do(publishAnalytics)
-    schedule.every(1).minutes.do(publishAnalytics)
+    # schedule.every(1).minutes.do(publishAnalytics)
 
     while True:
         for plug in plugList:
@@ -311,6 +311,7 @@ async def main():
                 plug.currentRun = Status.notRunning
 
             plug.handlePublishing(mqttClient=client, publishTopic=currentPlug.alias)
+            plug.handlePublishAnalytics(mqttClient=client)
             plug.twoRunsBefore = plug.oneRunBefore
             plug.oneRunBefore = plug.currentRun
             print("=============================================")

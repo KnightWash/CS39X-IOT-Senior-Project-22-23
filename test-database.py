@@ -79,7 +79,8 @@ def publishAnalytics():
     payload = queryToJson(con, selectLastWeekInfo)
     try:
         print("PUBLISHING ANALYTICS TO 'calvin/knightwash/analytics'")
-        client.publish(
+        analyticsClient = mqtt.Client("knightwash-analytics")
+        analyticsClient.publish(
             "calvin/knightwash/analytics",
             qos=1,
             payload=payload,

@@ -195,14 +195,16 @@ def publishAnalytics(mqttClient):
                 retain=True,
             )
         except:
-            print("FAILED TO PUBLISH ANALYTICS")
-            logging.warning("FAILED TO PUBLISH ANALYTICS to ")
+            print(f"FAILED TO PUBLISH ANALYTICS to 'calvin/knightwash/{location}'")
+            logging.warning(
+                f"FAILED TO PUBLISH ANALYTICS to 'calvin/knightwash/{location}'"
+            )
         else:
-            print("SUCCESSFULLY PUBLISHED ANALYTICS")
+            print(f"SUCCESSFULLY PUBLISHED ANALYTICS to 'calvin/knightwash/{location}'")
     return
 
 
-def queryToJson(conn, query):
+def queryToJson(con, query):
     """Executes an sql query and returns the results as a json formatted string"""
     cur = con.cursor()
     cur.execute(query)
@@ -249,7 +251,8 @@ async def main():
     print(plugList)
 
     # Scheduling publishAnalytics() to run every day at midnight
-    schedule.every().day.at("00:00").do(publishAnalytics)
+    # schedule.every().day.at("00:00").do(publishAnalytics)
+    schedule.every(1).minutes.do(publishAnalytics)
 
     while True:
         for plug in plugList:

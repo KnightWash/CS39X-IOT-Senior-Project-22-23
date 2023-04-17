@@ -1,6 +1,6 @@
 import sqlite3
-import time
-import datetime
+from time import sleep
+from datetime import datetime
 import pytz
 import schedule
 import json
@@ -51,7 +51,7 @@ runTime = 0
 
 
 def getCurrentDateTime():
-    return datetime.datetime.now(est)
+    return datetime.now(est)
 
 
 def getCurrentUnixTime():
@@ -97,29 +97,29 @@ n = 1
 schedule.every(n).minutes.do(publishAnalytics)
 
 while True:
-    ########### MACHINE TURNS ON #############
-    print("\nStarting test machine")
-    client.publish(
-        publishTopic,
-        qos=1,
-        payload=("On|" + str(int(time.time()))),
-        retain=True,
-    )
-
     ###### LOG START TIME #######
     # startTime = int(time.time())
     startTime = getCurrentUnixTime()
     startTimeRounded = roundTimeToHour(startTime)
 
+    ########### MACHINE TURNS ON #############
+    print("\nStarting test machine")
+    client.publish(
+        publishTopic,
+        qos=1,
+        payload=("On|" + str(startTime)),
+        retain=True,
+    )
+
     ##### SLEEP #####
-    time.sleep(10)
+    sleep(10)
 
     ########### MACHINE TURNS OFF ############
     print("Stopping test machine")
     client.publish(
         publishTopic,
         qos=1,
-        payload=("Off|" + str(int(time.time()))),
+        payload=("Off|" + str(startTime)),
         retain=True,
     )
 
@@ -143,7 +143,7 @@ while True:
     con.commit()
     print("Wrote to database")
     ##### SLEEP #####
-    time.sleep(10)
+    sleep(10)
 
     ########## PRINTING ALL ROWS OF DATABASE ###########
     # Execute the SELECT statement
@@ -158,4 +158,4 @@ while True:
 
     ################# SCHEDULED JOB ####################
     schedule.run_pending()
-    time.sleep(1)
+    sleep(1)

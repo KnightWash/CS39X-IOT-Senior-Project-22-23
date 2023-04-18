@@ -17,9 +17,9 @@ cur = con.cursor()
 cur.execute(
     """CREATE TABLE IF NOT EXISTS TestMachines (
         id INTEGER PRIMARY KEY,
-        name TEXT NOT NULL, 
-        location TEXT NOT NULL, 
-        startTime INTEGER, 
+        name TEXT NOT NULL,
+        location TEXT NOT NULL,
+        startTime INTEGER,
         stopTime INTEGER,
         startTimeRounded INTEGER,
         runTime INTEGER
@@ -114,8 +114,8 @@ while True:
         retain=True,
     )
 
-    ##### Machine runs for 20 seconds #####
-    sleep(20)
+    ##### Machine runs for 15 seconds #####
+    sleep(15)
 
     ########### MACHINE TURNS OFF ############
     print("Stopping test machine")
@@ -140,7 +140,7 @@ while True:
     ###### WRITE CURRENT RUN INFO TO DATABASE #######
     cur.execute(
         f"""
-        INSERT INTO TestMachines (name, location, startTime, stopTime, startTimeRounded, runTime) 
+        INSERT INTO TestMachines (name, location, startTime, stopTime, startTimeRounded, runTime)
         VALUES ('{machineName}', '{location}', {startTime}, {stopTime}, {startTimeRounded}, {runTime})
         """
     )
@@ -148,8 +148,8 @@ while True:
     print("Wrote to database")
     ###################################################
 
-    ##### Machine turns off for 20 seconds #####
-    sleep(20)
+    ##### Machine turns off for 15 seconds #####
+    sleep(15)
 
     ########## PRINTING ALL ROWS OF DATABASE ###########
     # Execute the SELECT statement

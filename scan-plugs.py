@@ -26,10 +26,9 @@ analyticsClient = mqtt.Client("knightwash-analytics")
 """mqtt client object to publish usage analytics"""
 
 
-# timeBetweenAnalyticsPosts = 3600 * 12  # 12 hours
 timeBetweenPosts = 5 * 60  #  5 minutes
 """amount of time (in seconds) to wait between mqtt posts to make sure that plug is online"""
-timeBetweenAnalyticsPosts = 2 * 60  # 2 minutes
+timeBetweenAnalyticsPosts = 12 * 3600  # 12 hours
 """amount of time (in seconds) to wait between mqtt posts to publish usage analytics"""
 powerOnThreshold = 11  # power in watts
 """Power level (in watts) above which laundry machine turns on."""

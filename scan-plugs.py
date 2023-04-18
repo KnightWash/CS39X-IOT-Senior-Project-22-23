@@ -2,15 +2,14 @@ import sqlite3
 import asyncio
 import time
 from datetime import datetime
-import schedule
 import json
-import logging  # https://docs.python.org/3/howto/logging.html
+import logging
 import paho.mqtt.client as mqtt
 from kasa import SmartPlug
 from enum import Enum
 from google.cloud import pubsub_v1
 
-# Logging configuration
+# Config for debug log
 logging.basicConfig(
     filename="debug.log",
     encoding="utf-8",
@@ -19,21 +18,24 @@ logging.basicConfig(
     datefmt="%m/%d/%Y %I:%M:%S %p",
 )
 
+# MQTT Setup
+MQTTServerName = "test.mosquitto.org"
 analyticsLocations = ("bolt", "heyns", "timmer")
 """Names of the hall to publish analytics to"""
 analyticsClient = mqtt.Client("knightwash-analytics")
+"""mqtt client object to publish usage analytics"""
 
-# Variables
-MQTTServerName = "test.mosquitto.org"
-timeBetweenPosts = 2 * 60  # 2 minutes in seconds
+
 # timeBetweenAnalyticsPosts = 3600 * 12  # 12 hours
-timeBetweenAnalyticsPosts = 60
+timeBetweenPosts = 5 * 60  #  5 minutes
+"""amount of time (in seconds) to wait between mqtt posts to make sure that plug is online"""
+timeBetweenAnalyticsPosts = 2 * 60  # 2 minutes
+"""amount of time (in seconds) to wait between mqtt posts to publish usage analytics"""
 powerOnThreshold = 11  # power in watts
+"""Power level (in watts) above which laundry machine turns on."""
 
-# pubsub stuff
 publisher = pubsub_v1.PublisherClient()
-# The `topic_path` method creates a fully qualified identifier
-# in the form `projects/{project_id}/topics/{topic_id}`
+"""Cloud pubsub client object"""
 
 # Database connection
 dbPath = "knightwash.db"
@@ -52,14 +54,17 @@ cur.execute(
 )
 
 
-# Enum for machine status
 class Status(Enum):
+    """The possible states that a laundry machine can be in"""
+
     notRunning = 0
     running = 1
     unknown = 2
 
 
 class LaundryMachine:
+    """Object representing a laundry machine"""
+
     def __init__(self):
         self.currentRun = Status.unknown
         self.twoRunsBefore = Status.unknown
@@ -71,12 +76,13 @@ class LaundryMachine:
 
         self.machineName = ""
         self.location = ""
-        self.startTime = 0
-        self.stopTime = 0
-        self.startTimeRounded = 0
+        self.startTime = int(time.time())
+        self.stopTime = int(time.time())
+        self.startTimeRounded = roundTimeToHour(self.startTime)
         self.runTime = 0
 
     def isTimeToRepost(self) -> bool:
+        """Returns True if enough time has passed since the last mqtt post"""
         if int(time.time()) - self.date >= timeBetweenPosts:
             return True
         return False
@@ -95,6 +101,7 @@ class LaundryMachine:
         return False
 
     def writeToDatabase(self) -> None:
+        """Write usage data from the last run of the laundry machine to the database"""
         print("Writing to database")
         logging.info("Writing to database")
 
@@ -116,7 +123,17 @@ class LaundryMachine:
                 break
 
     def handlePublishing(self, mqttClient, publishTopic) -> None:
-        # Return early if these conditions aren't met
+        """
+        Publish machine state if all the conditions are met
+
+        Publishes the state of the machine to the topic by checking if:
+            1) the state of the machine has changed
+
+            2) enough time has passed since the last mqtt post
+
+            3) the machine's power level isn't spiking, leading to false positives
+        """
+
         if self.isStateChanged() is False and self.isTimeToRepost() is False:
             return
         if self.isPowerLevelStable() is False:
@@ -142,14 +159,13 @@ class LaundryMachine:
             displayedMessage = "posting 'Off' to MQTT..."
             payloadMessage = "Off|"
 
-        ### send pubsub notifications out to people subscribed to machines ###
-        # if self.isStateChanged() is True: #fire notifications off when machine updates
-        # if self.isStateChanged() is True or self.isTimeToRepost() is True: #fire notifications off every 5 minutes or when machine updates
-        # if True: #fire notifications off as fast as possible
-        if (
-            self.isStateChanged() is True and self.currentRun == Status.notRunning
-        ):  # fire notifications when state changes from on to off
+        # send pubsub notifications out to people subscribed to machines
+        if self.isStateChanged() is True and self.currentRun == Status.notRunning:
+            # fire notifications when state changes from on to off
             # pubSubMachineName = publishTopic.replace("/", "-") # convert / in topic name to - since pubsub topics can't handle slashes
+            # The `topic_path` method creates a fully qualified identifier
+            # in the form `projects/{project_id}/topics/{topic_id}`
+
             # topic_path = publisher.topic_path("knightwash-webui-angular", pubSubTopic)
             topic_path = publisher.topic_path(
                 "knightwash-webui-angular", "machines_pubsub"
@@ -157,6 +173,7 @@ class LaundryMachine:
 
             # data = payloadMessage.replace("|", "").encode("utf-8")
             data = publishTopic.encode("utf-8")
+
             # When you publish a message, the client returns a future.
             future = publisher.publish(topic_path, data)
             print(future.result())
@@ -183,15 +200,20 @@ class LaundryMachine:
             if attempts >= 3:
                 print(f"Posting failed for {publishTopic} at {self.date}")
                 logging.warning(f"Posting failed for {publishTopic} at {self.date}")
-            # return
 
     def isTimeToPublishAnalytics(self):
+        """Returns True if enough time has passed since the last analytics post"""
+
         if int(time.time()) - self.analyticsPostDate >= timeBetweenAnalyticsPosts:
             self.analyticsPostDate = int(time.time())
             return True
         return False
 
     def handlePublishAnalytics(self, mqttClient):
+        """
+        If enough time has passed since last analytics post, query
+        the database and publish analytics for each hall separately
+        """
         if self.isTimeToPublishAnalytics():
             for location in analyticsLocations:
                 selectLastWeekInfo = f"SELECT startTimeRounded as hour, COUNT(*) as count FROM TestMachines WHERE startTime >= strftime('%s', datetime('now', '-7 days')) AND location='{location}' GROUP BY startTimeRounded;"
@@ -232,12 +254,14 @@ def queryToJson(query):
 
 
 def roundTimeToHour(unix_time):
+    """Takes input time in unix epoch and returns an integer representing the hour"""
     dt = datetime.fromtimestamp(unix_time)
     rounded_dt = dt.replace(minute=0, second=0)
     return rounded_dt.hour
 
 
 def getCurrentUnixTime():
+    """Returns the current time in unix epoch"""
     return int(time.time())
 
 

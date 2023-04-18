@@ -92,7 +92,7 @@ def publishAnalytics():
 
 
 ######## SCHEDULED FUNCTION TO PUBILSH ANALYTICS EVERY n MINUTES #########
-n = 1
+n = 2
 schedule.every(n).minutes.do(publishAnalytics)
 
 while True:
@@ -114,8 +114,8 @@ while True:
         retain=True,
     )
 
-    ##### Machine runs for 30 seconds #####
-    sleep(30)
+    ##### Machine runs for 20 seconds #####
+    sleep(20)
 
     ########### MACHINE TURNS OFF ############
     print("Stopping test machine")
@@ -148,8 +148,8 @@ while True:
     print("Wrote to database")
     ###################################################
 
-    ##### Machine turns off for 30 seconds #####
-    sleep(30)
+    ##### Machine turns off for 20 seconds #####
+    sleep(20)
 
     ########## PRINTING ALL ROWS OF DATABASE ###########
     # Execute the SELECT statement

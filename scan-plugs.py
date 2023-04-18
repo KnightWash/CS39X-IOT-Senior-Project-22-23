@@ -152,9 +152,9 @@ class LaundryMachine:
             if self.isStateChanged():
                 self.stopTime = getCurrentUnixTime()
                 print("Machine stopped")
-                self.runTime = (
-                    self.stopTime - self.startTime
-                ) / 60  # runtime in minutes
+                self.runTime = int(
+                    (self.stopTime - self.startTime) / 60
+                )  # runtime in minutes
                 logging.info("Machine stopped")
             displayedMessage = "posting 'Off' to MQTT..."
             payloadMessage = "Off|"

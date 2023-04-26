@@ -1,0 +1,14 @@
+[Unit]
+Description=Knightwash Plug Scanner
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+WorkingDirectory=/home/knightwash/backend
+ExecStart=/usr/bin/python3 /home/knightwash/backend/scan-plugs.py
+
+[Install]
+WantedBy=multi-user.target

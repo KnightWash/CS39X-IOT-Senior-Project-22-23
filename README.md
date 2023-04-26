@@ -30,7 +30,6 @@ This repo contains the backend code that runs on the RaspberryPi.
 - After a machine has finished running, it stores the machine's name, location, startTime and stopTime in the local SQLite database.
 - Every hour, it queries the database to get the machine runs from the last 7 days, converts it to JSON, and publishes it to the MQTT topic for usage-analytics.
 
----
 
 ## Installation and Setup
 

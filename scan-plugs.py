@@ -158,19 +158,17 @@ class LaundryMachine:
             displayedMessage = "posting 'Off' to MQTT..."
             payloadMessage = "Off|"
 
-        # send pubsub notifications out to people subscribed to machines
+        # send pubsub message to PubSub topic
         if self.isStateChanged() is True and self.currentRun == Status.notRunning:
             # fire notifications when state changes from on to off
             # pubSubMachineName = publishTopic.replace("/", "-") # convert / in topic name to - since pubsub topics can't handle slashes
             # The `topic_path` method creates a fully qualified identifier
             # in the form `projects/{project_id}/topics/{topic_id}`
 
-            # topic_path = publisher.topic_path("knightwash-webui-angular", pubSubTopic)
             topic_path = publisher.topic_path(
                 "knightwash-webui-angular", "machines_pubsub"
             )
 
-            # data = payloadMessage.replace("|", "").encode("utf-8")
             data = publishTopic.encode("utf-8")
 
             # When you publish a message, the client returns a future.
@@ -297,7 +295,6 @@ async def main():
                 print("=============================================")
                 continue
 
-            # print(currentPlug.get_emeter_daily(year=2023, month=1))
             print("Usage today:", currentPlug.emeter_today, "kWh")
             print("Usage this month:", currentPlug.emeter_this_month, "kWh")
             print(currentPlug.alias + "'s power level is...")

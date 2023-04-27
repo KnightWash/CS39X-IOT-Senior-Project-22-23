@@ -66,6 +66,8 @@ class LaundryMachine:
 
     def __init__(self):
         self.currentRun = Status.unknown
+        self.fourRunsBefore = Status.unknown
+        self.threeRunsBefore = Status.unknown
         self.twoRunsBefore = Status.unknown
         self.oneRunBefore = Status.unknown
         self.previousMachineState = Status.unknown
@@ -95,7 +97,13 @@ class LaundryMachine:
     def isPowerLevelStable(self) -> bool:
         """Returns true if the power level has remained consistent for the last 3 iterations of the loop.
         \nEliminates false positives due to random spikes in power levels"""
-        if self.currentRun == self.oneRunBefore == self.twoRunsBefore:
+        if (
+            self.currentRun
+            == self.oneRunBefore
+            == self.twoRunsBefore
+            == self.threeRunsBefore
+            == self.fourRunsBefore
+        ):
             return True
         return False
 
@@ -322,6 +330,8 @@ async def main():
                 plug.currentRun = Status.notRunning
 
             plug.handlePublishing(mqttClient=client, publishTopic=currentPlug.alias)
+            plug.fourRunsBefore = plug.threeRunsBefore
+            plug.threeRunsBefore = plug.twoRunsBefore
             plug.twoRunsBefore = plug.oneRunBefore
             plug.oneRunBefore = plug.currentRun
             print("=============================================")

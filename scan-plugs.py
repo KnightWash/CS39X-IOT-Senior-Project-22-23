@@ -30,7 +30,7 @@ timeBetweenPosts = 5 * 60  #  5 minutes
 """amount of time (in seconds) to wait between mqtt posts to make sure that plug is online"""
 timeBetweenAnalyticsPosts = 3600  # 1 hour
 """amount of time (in seconds) to wait between mqtt posts to publish usage analytics"""
-powerOnThreshold = 11  # power in watts
+powerOnThreshold = 12  # power in watts
 """Power level (in watts) above which laundry machine turns on."""
 
 publisher = pubsub_v1.PublisherClient()
@@ -66,6 +66,8 @@ class LaundryMachine:
 
     def __init__(self):
         self.currentRun = Status.unknown
+        self.fourRunsBefore = Status.unknown
+        self.threeRunsBefore = Status.unknown
         self.twoRunsBefore = Status.unknown
         self.oneRunBefore = Status.unknown
         self.previousMachineState = Status.unknown
@@ -95,7 +97,13 @@ class LaundryMachine:
     def isPowerLevelStable(self) -> bool:
         """Returns true if the power level has remained consistent for the last 3 iterations of the loop.
         \nEliminates false positives due to random spikes in power levels"""
-        if self.currentRun == self.oneRunBefore == self.twoRunsBefore:
+        if (
+            self.currentRun
+            == self.oneRunBefore
+            == self.twoRunsBefore
+            == self.threeRunsBefore
+            == self.fourRunsBefore
+        ):
             return True
         return False
 
@@ -105,7 +113,7 @@ class LaundryMachine:
         logging.info("Writing to database")
 
         attempts = 0
-        retries = 3
+        retries = 5
         while attempts < retries:
             try:
                 cur.execute(
@@ -273,6 +281,8 @@ async def main():
     for i in range(len(plugList)):
         plugList[i].oneRunBefore = Status.unknown
         plugList[i].twoRunsBefore = Status.unknown
+        plugList[i].threeRunsBefore = Status.unknown
+        plugList[i].fourRunsBefore = Status.unknown
         plugList[i].IP = IPList[i]
         plugList[i].previousMachineState = Status.unknown
         plugList[i].date = 0
@@ -322,6 +332,8 @@ async def main():
                 plug.currentRun = Status.notRunning
 
             plug.handlePublishing(mqttClient=client, publishTopic=currentPlug.alias)
+            plug.fourRunsBefore = plug.threeRunsBefore
+            plug.threeRunsBefore = plug.twoRunsBefore
             plug.twoRunsBefore = plug.oneRunBefore
             plug.oneRunBefore = plug.currentRun
             print("=============================================")

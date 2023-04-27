@@ -281,6 +281,8 @@ async def main():
     for i in range(len(plugList)):
         plugList[i].oneRunBefore = Status.unknown
         plugList[i].twoRunsBefore = Status.unknown
+        plugList[i].threeRunsBefore = Status.unknown
+        plugList[i].fourRunsBefore = Status.unknown
         plugList[i].IP = IPList[i]
         plugList[i].previousMachineState = Status.unknown
         plugList[i].date = 0
